@@ -1,0 +1,372 @@
+{
+  "R": {
+    "Version": "4.5.1",
+    "Repositories": [
+      {
+        "Name": "CRAN",
+        "URL": "https://packagemanager.posit.co/cran/latest"
+      }
+    ]
+  },
+  "Packages": {
+    "R6": {
+      "Package": "R6",
+      "Version": "2.6.1",
+      "Source": "Repository",
+      "Title": "Encapsulated Classes with Reference Semantics",
+      "Authors@R": "c( person(\"Winston\", \"Chang\", , \"winston@posit.co\", role = c(\"aut\", \"cre\")), person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\")) )",
+      "Description": "Creates classes with reference semantics, similar to R's built-in reference classes. Compared to reference classes, R6 classes are simpler and lighter-weight, and they are not built on S4 classes so they do not require the methods package. These classes allow public and private members, and they support inheritance, even when the classes are defined in different packages.",
+      "License": "MIT + file LICENSE",
+      "URL": "https://r6.r-lib.org, https://github.com/r-lib/R6",
+      "BugReports": "https://github.com/r-lib/R6/issues",
+      "Depends": [
+        "R (>= 3.6)"
+      ],
+      "Suggests": [
+        "lobstr",
+        "testthat (>= 3.0.0)"
+      ],
+      "Config/Needs/website": "tidyverse/tidytemplate, ggplot2, microbenchmark, scales",
+      "Config/testthat/edition": "3",
+      "Encoding": "UTF-8",
+      "RoxygenNote": "7.3.2",
+      "NeedsCompilation": "no",
+      "Author": "Winston Chang [aut, cre], Posit Software, PBC [cph, fnd]",
+      "Maintainer": "Winston Chang <winston@posit.co>",
+      "Repository": "CRAN"
+    },
+    "dcmodify": {
+      "Package": "dcmodify",
+      "Version": "0.9.0",
+      "Source": "Repository",
+      "Maintainer": "Mark van der Loo <mark.vanderloo@gmail.com>",
+      "License": "GPL-3",
+      "Title": "Modify Data Using Externally Defined Modification Rules",
+      "Type": "Package",
+      "LazyLoad": "yes",
+      "Authors@R": "c(person(\"Mark\", \"van der Loo\" , role   = c(\"cre\",\"aut\") , email  = \"mark.vanderloo@gmail.com\" , comment= c(ORCID=\"0000-0002-9807-4686\")) , person(\"Edwin\", \"de Jonge\" , role = \"aut\" , comment=c(ORCID=\"0000-0002-6580-4718\")) , person(\"Sjabbo\",\"Schaveling\",  role = \"ctb\") , person(\"Floris\", \"Ruijter\", role = \"ctb\") )",
+      "Description": "Data cleaning scripts typically contain a lot of 'if this change that' type of statements. Such statements are typically condensed expert knowledge. With this package, such 'data modifying rules' are taken out of the code and become in stead parameters to the work flow. This allows one to maintain, document, and reason about data modification rules as separate entities.",
+      "Depends": [
+        "methods"
+      ],
+      "URL": "https://github.com/data-cleaning/dcmodify",
+      "BugReports": "https://github.com/data-cleaning/dcmodify/issues",
+      "Encoding": "UTF-8",
+      "Imports": [
+        "yaml",
+        "validate (>= 1.1.3)",
+        "lumberjack (>= 1.3.1)",
+        "settings",
+        "utils"
+      ],
+      "Suggests": [
+        "simplermarkdown",
+        "tinytest"
+      ],
+      "VignetteBuilder": "simplermarkdown",
+      "Collate": "'dplyr_verbs.R' 'guard.R' 'modifier.R' 'modify.R' 'validate.R'",
+      "RoxygenNote": "7.3.1",
+      "NeedsCompilation": "no",
+      "Author": "Mark van der Loo [cre, aut] (<https://orcid.org/0000-0002-9807-4686>), Edwin de Jonge [aut] (<https://orcid.org/0000-0002-6580-4718>), Sjabbo Schaveling [ctb], Floris Ruijter [ctb]",
+      "Repository": "CRAN"
+    },
+    "here": {
+      "Package": "here",
+      "Version": "1.0.2",
+      "Source": "Repository",
+      "Title": "A Simpler Way to Find Your Files",
+      "Date": "2025-09-06",
+      "Authors@R": "c(person(given = \"Kirill\", family = \"M\\u00fcller\", role = c(\"aut\", \"cre\"), email = \"kirill@cynkra.com\", comment = c(ORCID = \"0000-0002-1416-3412\")), person(given = \"Jennifer\", family = \"Bryan\", role = \"ctb\", email = \"jenny@rstudio.com\", comment = c(ORCID = \"0000-0002-6983-2759\")))",
+      "Description": "Constructs paths to your project's files. Declare the relative path of a file within your project with 'i_am()'. Use the 'here()' function as a drop-in replacement for 'file.path()', it will always locate the files relative to your project root.",
+      "License": "MIT + file LICENSE",
+      "URL": "https://here.r-lib.org/, https://github.com/r-lib/here",
+      "BugReports": "https://github.com/r-lib/here/issues",
+      "Imports": [
+        "rprojroot (>= 2.1.0)"
+      ],
+      "Suggests": [
+        "conflicted",
+        "covr",
+        "fs",
+        "knitr",
+        "palmerpenguins",
+        "plyr",
+        "readr",
+        "rlang",
+        "rmarkdown",
+        "testthat",
+        "uuid",
+        "withr"
+      ],
+      "VignetteBuilder": "knitr",
+      "Encoding": "UTF-8",
+      "RoxygenNote": "7.3.3.9000",
+      "Config/testthat/edition": "3",
+      "Config/Needs/website": "tidyverse/tidytemplate",
+      "NeedsCompilation": "no",
+      "Author": "Kirill Müller [aut, cre] (ORCID: <https://orcid.org/0000-0002-1416-3412>), Jennifer Bryan [ctb] (ORCID: <https://orcid.org/0000-0002-6983-2759>)",
+      "Maintainer": "Kirill Müller <kirill@cynkra.com>",
+      "Repository": "CRAN"
+    },
+    "jsonlite": {
+      "Package": "jsonlite",
+      "Version": "2.0.0",
+      "Source": "Repository",
+      "Title": "A Simple and Robust JSON Parser and Generator for R",
+      "License": "MIT + file LICENSE",
+      "Depends": [
+        "methods"
+      ],
+      "Authors@R": "c( person(\"Jeroen\", \"Ooms\", role = c(\"aut\", \"cre\"), email = \"jeroenooms@gmail.com\", comment = c(ORCID = \"0000-0002-4035-0289\")), person(\"Duncan\", \"Temple Lang\", role = \"ctb\"), person(\"Lloyd\", \"Hilaiel\", role = \"cph\", comment=\"author of bundled libyajl\"))",
+      "URL": "https://jeroen.r-universe.dev/jsonlite https://arxiv.org/abs/1403.2805",
+      "BugReports": "https://github.com/jeroen/jsonlite/issues",
+      "Maintainer": "Jeroen Ooms <jeroenooms@gmail.com>",
+      "VignetteBuilder": "knitr, R.rsp",
+      "Description": "A reasonably fast JSON parser and generator, optimized for statistical  data and the web. Offers simple, flexible tools for working with JSON in R, and is particularly powerful for building pipelines and interacting with a web API.  The implementation is based on the mapping described in the vignette (Ooms, 2014). In addition to converting JSON data from/to R objects, 'jsonlite' contains  functions to stream, validate, and prettify JSON data. The unit tests included  with the package verify that all edge cases are encoded and decoded consistently  for use with dynamic data in systems and applications.",
+      "Suggests": [
+        "httr",
+        "vctrs",
+        "testthat",
+        "knitr",
+        "rmarkdown",
+        "R.rsp",
+        "sf"
+      ],
+      "RoxygenNote": "7.3.2",
+      "Encoding": "UTF-8",
+      "NeedsCompilation": "yes",
+      "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>), Duncan Temple Lang [ctb], Lloyd Hilaiel [cph] (author of bundled libyajl)",
+      "Repository": "CRAN"
+    },
+    "lumberjack": {
+      "Package": "lumberjack",
+      "Version": "1.3.1",
+      "Source": "Repository",
+      "Maintainer": "Mark van der Loo <mark.vanderloo@gmail.com>",
+      "License": "EUPL",
+      "Title": "Track Changes in Data",
+      "Type": "Package",
+      "LazyLoad": "yes",
+      "Authors@R": "c(person(\"Mark\", \"van der Loo\" , role    = c(\"aut\",\"cre\") , email   = \"mark.vanderloo@gmail.com\" , comment = c(ORCID=\"0000-0002-9807-4686\")) , person(\"Floris\", \"Ruijter\", role = \"ctb\") )",
+      "Description": "A framework that allows for easy logging of changes in data. Main features: start tracking changes by adding a single line of code to  an existing script. Track changes in multiple datasets, using multiple  loggers. Add custom-built loggers or use loggers offered by other  packages. <doi:10.18637/jss.v098.i01>.",
+      "URL": "https://github.com/markvanderloo/lumberjack",
+      "BugReports": "https://github.com/markvanderloo/lumberjack/issues",
+      "Imports": [
+        "utils",
+        "R6"
+      ],
+      "Depends": [
+        "R (>= 3.4.0)"
+      ],
+      "Suggests": [
+        "tinytest"
+      ],
+      "RoxygenNote": "7.2.1",
+      "Encoding": "UTF-8",
+      "NeedsCompilation": "no",
+      "Author": "Mark van der Loo [aut, cre] (<https://orcid.org/0000-0002-9807-4686>), Floris Ruijter [ctb]",
+      "Repository": "CRAN"
+    },
+    "renv": {
+      "Package": "renv",
+      "Version": "1.1.5",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Project Environments",
+      "Authors@R": "c( person(\"Kevin\", \"Ushey\", role = c(\"aut\", \"cre\"), email = \"kevin@rstudio.com\", comment = c(ORCID = \"0000-0003-2880-7407\")), person(\"Hadley\", \"Wickham\", role = c(\"aut\"), email = \"hadley@rstudio.com\", comment = c(ORCID = \"0000-0003-4757-117X\")), person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\")) )",
+      "Description": "A dependency management toolkit for R. Using 'renv', you can create and manage project-local R libraries, save the state of these libraries to a 'lockfile', and later restore your library as required. Together, these tools can help make your projects more isolated, portable, and reproducible.",
+      "License": "MIT + file LICENSE",
+      "URL": "https://rstudio.github.io/renv/, https://github.com/rstudio/renv",
+      "BugReports": "https://github.com/rstudio/renv/issues",
+      "Imports": [
+        "utils"
+      ],
+      "Suggests": [
+        "BiocManager",
+        "cli",
+        "compiler",
+        "covr",
+        "cpp11",
+        "devtools",
+        "generics",
+        "gitcreds",
+        "jsonlite",
+        "jsonvalidate",
+        "knitr",
+        "miniUI",
+        "modules",
+        "packrat",
+        "pak",
+        "R6",
+        "remotes",
+        "reticulate",
+        "rmarkdown",
+        "rstudioapi",
+        "shiny",
+        "testthat",
+        "uuid",
+        "waldo",
+        "yaml",
+        "webfakes"
+      ],
+      "Encoding": "UTF-8",
+      "RoxygenNote": "7.3.2",
+      "VignetteBuilder": "knitr",
+      "Config/Needs/website": "tidyverse/tidytemplate",
+      "Config/testthat/edition": "3",
+      "Config/testthat/parallel": "true",
+      "Config/testthat/start-first": "bioconductor,python,install,restore,snapshot,retrieve,remotes",
+      "NeedsCompilation": "no",
+      "Author": "Kevin Ushey [aut, cre] (ORCID: <https://orcid.org/0000-0003-2880-7407>), Hadley Wickham [aut] (ORCID: <https://orcid.org/0000-0003-4757-117X>), Posit Software, PBC [cph, fnd]",
+      "Maintainer": "Kevin Ushey <kevin@rstudio.com>",
+      "Repository": "CRAN"
+    },
+    "rprojroot": {
+      "Package": "rprojroot",
+      "Version": "2.1.1",
+      "Source": "Repository",
+      "Title": "Finding Files in Project Subdirectories",
+      "Authors@R": "person(given = \"Kirill\", family = \"M\\u00fcller\", role = c(\"aut\", \"cre\"), email = \"kirill@cynkra.com\", comment = c(ORCID = \"0000-0002-1416-3412\"))",
+      "Description": "Robust, reliable and flexible paths to files below a project root. The 'root' of a project is defined as a directory that matches a certain criterion, e.g., it contains a certain regular file.",
+      "License": "MIT + file LICENSE",
+      "URL": "https://rprojroot.r-lib.org/, https://github.com/r-lib/rprojroot",
+      "BugReports": "https://github.com/r-lib/rprojroot/issues",
+      "Depends": [
+        "R (>= 3.0.0)"
+      ],
+      "Suggests": [
+        "covr",
+        "knitr",
+        "lifecycle",
+        "rlang",
+        "rmarkdown",
+        "testthat (>= 3.2.0)",
+        "withr"
+      ],
+      "VignetteBuilder": "knitr",
+      "Config/testthat/edition": "3",
+      "Encoding": "UTF-8",
+      "RoxygenNote": "7.3.2.9000",
+      "Config/autostyle/scope": "line_breaks",
+      "Config/autostyle/strict": "true",
+      "Config/Needs/website": "tidyverse/tidytemplate",
+      "NeedsCompilation": "no",
+      "Author": "Kirill Müller [aut, cre] (ORCID: <https://orcid.org/0000-0002-1416-3412>)",
+      "Maintainer": "Kirill Müller <kirill@cynkra.com>",
+      "Repository": "CRAN"
+    },
+    "settings": {
+      "Package": "settings",
+      "Version": "0.2.7",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Software Option Settings Manager for R",
+      "Author": "Mark van der Loo",
+      "Maintainer": "Mark van der Loo <mark.vanderloo@gmail.com>",
+      "Description": "Provides option settings management that goes beyond R's default 'options' function. With this package, users can define their own option settings manager holding option names, default values and  (if so desired) ranges or sets of allowed option values that will be  automatically checked. Settings can then be retrieved, altered and reset  to defaults with ease. For R programmers and package developers it offers  cloning and merging functionality which allows for conveniently defining  global and local options, possibly in a multilevel options hierarchy. See  the package vignette for some examples concerning functions, S4 classes,  and reference classes. There are convenience functions to reset par()  and options() to their 'factory defaults'.",
+      "URL": "https://github.com/markvanderloo/settings",
+      "BugReports": "https://github.com/markvanderloo/settings/issues",
+      "License": "GPL-3",
+      "VignetteBuilder": "knitr",
+      "Imports": [
+        "grDevices",
+        "graphics"
+      ],
+      "Suggests": [
+        "knitr",
+        "rmarkdown",
+        "tinytest"
+      ],
+      "RoxygenNote": "7.1.1",
+      "NeedsCompilation": "no",
+      "Repository": "CRAN"
+    },
+    "validate": {
+      "Package": "validate",
+      "Version": "1.1.5",
+      "Source": "Repository",
+      "Maintainer": "Mark van der Loo <mark.vanderloo@gmail.com>",
+      "License": "GPL-3",
+      "Title": "Data Validation Infrastructure",
+      "LazyData": "no",
+      "Type": "Package",
+      "LazyLoad": "yes",
+      "Authors@R": "c(person(\"Mark\", \"van der Loo\" , role   = c(\"cre\",\"aut\") , email  = \"mark.vanderloo@gmail.com\" , comment= c(ORCID=\"0000-0002-9807-4686\")) , person(\"Edwin\", \"de Jonge\" , role = \"aut\" , comment=c(ORCID=\"0000-0002-6580-4718\")) , person(\"Paul\",\"Hsieh\" , role = \"ctb\" ))",
+      "Description": "Declare data validation rules and data quality indicators; confront data with them and analyze or visualize the results. The package supports rules that are per-field, in-record, cross-record or cross-dataset. Rules can be automatically analyzed for rule type and connectivity. Supports checks implied by an SDMX DSD file as well. See also Van der Loo and De Jonge (2018) <doi:10.1002/9781118897126>, Chapter 6 and the JSS paper (2021) <doi:10.18637/jss.v097.i10>.",
+      "Depends": [
+        "R (>= 3.5.0)",
+        "methods"
+      ],
+      "URL": "https://github.com/data-cleaning/validate",
+      "BugReports": "https://github.com/data-cleaning/validate/issues",
+      "Imports": [
+        "stats",
+        "graphics",
+        "grid",
+        "settings",
+        "yaml"
+      ],
+      "Suggests": [
+        "rsdmx",
+        "tinytest (>= 0.9.6)",
+        "knitr",
+        "bookdown",
+        "lumberjack",
+        "rmarkdown"
+      ],
+      "VignetteBuilder": "knitr",
+      "Collate": "'rule.R' 'sugar.R' 'validate_pkg.R' 'parse.R' 'expressionset.R' 'indicator.R' 'validator.R' 'confrontation.R' 'compare.R' 'factory.R' 'genericrules.R' 'lumberjack.R' 'plot.R' 'retailers.R' 'run_validation.R' 'sdmx.R' 'syntax.R' 'utils.R' 'yaml.R'",
+      "RoxygenNote": "7.3.1",
+      "Encoding": "UTF-8",
+      "NeedsCompilation": "yes",
+      "Author": "Mark van der Loo [cre, aut] (<https://orcid.org/0000-0002-9807-4686>), Edwin de Jonge [aut] (<https://orcid.org/0000-0002-6580-4718>), Paul Hsieh [ctb]",
+      "Repository": "CRAN"
+    },
+    "writexl": {
+      "Package": "writexl",
+      "Version": "1.5.4",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Export Data Frames to Excel 'xlsx' Format",
+      "Authors@R": "c( person(\"Jeroen\", \"Ooms\", ,\"jeroenooms@gmail.com\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"0000-0002-4035-0289\")), person(\"John McNamara\", role = \"cph\", comment = \"Author of libxlsxwriter (see AUTHORS and COPYRIGHT files for details)\"))",
+      "Description": "Zero-dependency data frame to xlsx exporter based on 'libxlsxwriter' <https://libxlsxwriter.github.io>. Fast and no Java or Excel required.",
+      "License": "BSD_2_clause + file LICENSE",
+      "Encoding": "UTF-8",
+      "URL": "https://ropensci.r-universe.dev/writexl https://docs.ropensci.org/writexl/",
+      "BugReports": "https://github.com/ropensci/writexl/issues",
+      "RoxygenNote": "7.0.2",
+      "Suggests": [
+        "spelling",
+        "readxl",
+        "nycflights13",
+        "testthat",
+        "bit64"
+      ],
+      "Language": "en-US",
+      "SystemRequirements": "zlib",
+      "NeedsCompilation": "yes",
+      "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>), John McNamara [cph] (Author of libxlsxwriter (see AUTHORS and COPYRIGHT files for details))",
+      "Maintainer": "Jeroen Ooms <jeroenooms@gmail.com>",
+      "Repository": "CRAN"
+    },
+    "yaml": {
+      "Package": "yaml",
+      "Version": "2.3.10",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Methods to Convert R Data to YAML and Back",
+      "Date": "2024-07-22",
+      "Suggests": [
+        "RUnit"
+      ],
+      "Author": "Shawn P Garbett [aut], Jeremy Stephens [aut, cre], Kirill Simonov [aut], Yihui Xie [ctb], Zhuoer Dong [ctb], Hadley Wickham [ctb], Jeffrey Horner [ctb], reikoch [ctb], Will Beasley [ctb], Brendan O'Connor [ctb], Gregory R. Warnes [ctb], Michael Quinn [ctb], Zhian N. Kamvar [ctb], Charlie Gao [ctb]",
+      "Maintainer": "Shawn Garbett <shawn.garbett@vumc.org>",
+      "License": "BSD_3_clause + file LICENSE",
+      "Description": "Implements the 'libyaml' 'YAML' 1.1 parser and emitter (<https://pyyaml.org/wiki/LibYAML>) for R.",
+      "URL": "https://github.com/vubiostat/r-yaml/",
+      "BugReports": "https://github.com/vubiostat/r-yaml/issues",
+      "NeedsCompilation": "yes",
+      "Repository": "CRAN"
+    }
+  }
+}

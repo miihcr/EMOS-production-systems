@@ -1,0 +1,17 @@
+# Ignore raw data folders
+01_raw/
+data/raw/
+
+# R and RStudio
+.Rhistory
+.RData
+.Rproj.user/
+.Ruserdata
+
+# renv local libs
+renv/library/
+renv/staging/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
