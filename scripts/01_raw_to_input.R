@@ -122,3 +122,16 @@ towns_input <- towns_raw |>
   select(town_id, town_name, start_valid, end_valid,
          status, x, y)
 
+# 7. Clean MUNICIPALITIES
+
+str(municipalities_raw)
+
+municipalities_input <- municipalities_raw |> 
+  mutate(
+    town_id = as.character(woonplaats_id),
+    municipality_id = as.character(gemeente_id),
+    start_valid      = begin_geldigheid,
+    end_valid        = eind_geldigheid
+  ) |> 
+  select(town_id, municipality_id,status,start_valid, end_valid,
+         )
