@@ -21,6 +21,7 @@ str(sales_input)
 
 
 sales_input <- sales_raw |>
+  distinct() |> 
   mutate(
     # lower-case and squeeze multiple spaces
     address  = str_squish(str_to_lower(address))
@@ -50,8 +51,9 @@ sales_input <- sales_raw |>
     sale_date = ymd(sale_date)
   ) |> 
   select(sale_id, street_name, house_number, house_addition,
-         postcode, city, sale_date, price_eur,
-         public_spaces_id)
+         postcode, city, sale_date, price_eur)
+
+
 
 # 3. Clean ADDRESSES
 
@@ -105,10 +107,12 @@ dwellings_input <- dwellings_raw |>
     address_id = as.character(hoofdadres),
     id_building = as.character(pand),
     start_valid      = begin_geldigheid,
-    end_valid        = eind_geldigheid
+    end_valid        = eind_geldigheid,
+    area_m2 = oppervlakte
   ) |> 
   select(dwelling_id, address_id, id_building, start_valid,
-         end_valid, gebruiksdoel, oppervlakte, x, y)
+         end_valid, gebruiksdoel, area_m2, x, y)
+
 
 # 6. Clean TOWNS
 str(towns_raw)
@@ -135,3 +139,18 @@ municipalities_input <- municipalities_raw |>
   ) |> 
   select(town_id, municipality_id,status,start_valid, end_valid,
          )
+
+
+
+# Identify and remove duplicates
+
+
+
+# Final line -- move if any other operations are done before this
+
+write_rds(sales_input,         "data/input/sales_input.rds")
+write_rds(addresses_input,     "data/input/addresses_input.rds")
+write_rds(dwellings_input,     "data/input/dwellings_input.rds")
+write_rds(public_spaces_input, "data/input/public_spaces_input.rds")
+write_rds(towns_input,         "data/input/towns_input.rds")
+write_rds(municipalities_input,"data/input/municipalities_input.rds")
