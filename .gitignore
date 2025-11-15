@@ -1,6 +1,5 @@
 # Ignore raw data folders
-01_raw/
-data/raw/
+01_raw/data/
 
 # R and RStudio
 .Rhistory
