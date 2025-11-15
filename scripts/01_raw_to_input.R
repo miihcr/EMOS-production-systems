@@ -21,7 +21,6 @@ str(sales_input)
 
 
 sales_input <- sales_raw |>
-  distinct() |> 
   mutate(
     # lower-case and squeeze multiple spaces
     address  = str_squish(str_to_lower(address))
