@@ -1,0 +1,17 @@
+# Ignore raw and processed data folders
+
+# Raw data (inside 01_raw/)
+01_raw/data/
+
+# Processed / input data (global data folder)
+02_input/data/
+
+# R and RStudio
+.Rhistory
+.RData
+.Rproj.user/
+.Ruserdata
+
+# OS/editor files
+.DS_Store
+Thumbs.db
