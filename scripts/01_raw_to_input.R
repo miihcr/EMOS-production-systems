@@ -7,11 +7,14 @@
 # 2. Normalization and coercion
 # 3. Standardization
 
+# Regex 
+
 # Helper functions
 
 clean_text <- function(x) {
   x |>
-    str_squish() |>
+    str_squish() |> # removes whitespace at the start and end
+    # replaces runs of multiple spaces
     str_to_lower() |> 
     na_if("") 
 }
@@ -52,7 +55,7 @@ clean_status <- function(x) {
 ## ---- 1. ADDRESSES ---- ##
 
 addresses_raw <- read_csv(
-  "01_raw/data/addresses.csv",
+  "data/raw/addresses.csv",
   col_types = cols(
     id                   = col_character(),
     postcode             = col_character(),
@@ -84,7 +87,7 @@ addresses_input <- addresses_raw |>
 ## ---- 2. PUBLIC SPACES ---- ##
 
 public_spaces_raw <- read_csv(
-  "01_raw/data/public_spaces.csv",
+  "data/raw/public_spaces.csv",
   col_types = cols(
     id               = col_character(),
     naam             = col_character(),
@@ -114,7 +117,7 @@ public_spaces_input <- public_spaces_raw |>
 ## ---- 3. DWELLINGS ---- ##
 
 dwellings_raw <- read_csv(
-  "01_raw/data/dwellings.csv",
+  "data/raw/dwellings.csv",
   col_types = cols(
     id               = col_character(),
     gebruiksdoel     = col_character(),
@@ -154,7 +157,7 @@ dwellings_input <- dwellings_raw |>
 ## ---- 4. TOWNS ---- ##
 
 towns_raw <- read_csv(
-  "01_raw/data/towns.csv",
+  "data/raw/towns.csv",
   col_types = cols(
     id               = col_character(),
     naam             = col_character(),
@@ -190,7 +193,7 @@ towns_input <- towns_raw |>
 ## ---- 5. MUNICIPALITIES ---- ##
 
 municipalities_raw <- read_csv(
-  "01_raw/data/municipalities.csv",
+  "data/raw/municipalities.csv",
   col_types = cols(
     woonplaats_id    = col_character(),
     gemeente_id      = col_character(),
@@ -222,7 +225,7 @@ municipalities_input <- municipalities_raw |>
 ## ---- 6. BUILDINGS ---- ##
 
 buildings_raw <- read_csv(
-  "01_raw/data/buildings.csv",
+  "data/raw/buildings.csv",
   col_types = cols(
     id               = col_character(),
     bouwjaar         = col_integer(),
@@ -259,7 +262,7 @@ buildings_input <- buildings_raw |>
 
 
 sales_raw <- read_csv(
-  "01_raw/data/sales.csv",
+  "data/raw/sales.csv",
   col_types = cols(.default = col_character())
 )
 
@@ -292,11 +295,7 @@ sales_input <- sales_raw |>
     full_address, street_name, house_number, house_addition,
     postcode, town_name, sales_price_eur, sale_date
   )
-
-
-
-# Deduplicate all BAG files
-
+ 
 # Deduplicate all BAG files
 
 addresses_input <- addresses_input |>
@@ -332,5 +331,4 @@ write_rds(public_spaces_input, "data/processed/public_spaces_input.rds")
 write_rds(towns_input,         "data/processed/towns_input.rds")
 write_rds(municipalities_input,"data/processed/municipalities_input.rds")
 write_rds(buildings_input,"data/processed/buildings_input.rds")
-
 
