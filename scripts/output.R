@@ -1,14 +1,12 @@
 # output (not complete)
 
 
-sales_data  <- read_rds("data/processed/sales_input.rds")
+final_dataset <- read_rds("data/processed/final_dataset.rds")
 
-sales_data |> 
-  group_by(town_name) |> 
+final_dataset |>
+  filter(address_city == "s hertogenbosch") |>
   summarise(
-    n_sales = n(),
-    avg_price = mean(sales_price_eur, na.rm = TRUE)
+    address_city = first(address_city),
+    avg_price    = mean(price_eur, na.rm = TRUE),
+    n_sales      = n()
   )
-
-  
-
