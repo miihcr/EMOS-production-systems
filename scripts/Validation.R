@@ -3,7 +3,6 @@ install.packages("validate")
 library(validate)
 library(here)
 
-?here
 
 data(SBS2000)
 
