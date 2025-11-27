@@ -11,8 +11,9 @@
 03_valid/    - validation files
 04_stats/    - statistical analysis
 05_output/   - final outputs
-scripts/     - R scripts (00_packages.R, get_data.R, cleaning & analysis scripts)
+scripts/     - R scripts that will later be organized in the above folders
 images/      - figures & plots
+data/        - both raw and processed data
 
 ```
 ---
