@@ -5,14 +5,17 @@
 
 ## Folder structure
 
+Note: not all folders appear in the git yet, since currently they are empty.
+
 ```
 01_raw/      - raw inputs
 02_input/    - processed inputs
 03_valid/    - validation files
 04_stats/    - statistical analysis
 05_output/   - final outputs
-scripts/     - R scripts (00_packages.R, get_data.R, cleaning & analysis scripts)
+scripts/     - R scripts that will later be organized in the above folders
 images/      - figures & plots
+data/        - both raw and processed data
 
 ```
 ---
@@ -57,32 +60,23 @@ This script:
 source("scripts/00_packages.R")
 ```
 
-### Read raw data
+### Data
 
-```r
-source("scripts/get_data.R")
-data <- get_data("01_raw/data")
-```
+All data is stored in `data/raw`and `data/processed`. Eventually they will be moved to its correct steady state. 
 
 ### Run the analysis pipelines
 
 Run scripts in order:
 
 ```r
-source("scripts/01_clean_data.R")
-source("scripts/02_analysis.R")
-source("scripts/03_visualizations.R")
+source("scripts/01_raw_to_input.R")
+source("scripts/02_input_to_linked.R")
+source("scripts/03_linked_to_output.R")
+source("scripts/output.R")
 ```
-
-Outputs (tables, stats, models, plots) are saved to:
-
-* `04_stats/`
-* `05_output/`
-* `images/`
-
 ---
 
-## Daily workflow
+## Workflow
 
 ### 1. Pull the latest changes before working
 
