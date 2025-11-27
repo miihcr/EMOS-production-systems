@@ -16,5 +16,13 @@ final_dataset |>
     .groups = "drop"
   )
 
+final_dataset |>
+  group_by(town_id, address_city) |>  # address_city is canonical town name
+  summarise(
+    n_sales = n(),
+    mean_price_eur = mean(price_eur, na.rm = TRUE),
+    .groups = "drop"
+  )
+
 
 
