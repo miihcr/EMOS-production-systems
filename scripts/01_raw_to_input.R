@@ -1,28 +1,87 @@
 # 01_raw_to_input.R
-# Convert RAW BAG + sales data → INPUT (Steady State 1)
+# Convert RAW BAG + sales data -> INPUT (Steady State 1)
 
-# Step 1: Read raw data (all IDs forced to character)
-sales_raw <- read_csv(
-  "01_raw/data/sales.csv",
-  col_types = cols(.default = col_character())
-) |> 
-  mutate(
-    across(where(is.character), ~ replace_na(.x, ""))
+# Every dataset follows a 4-step structure
+
+# 1. Inspection
+# 2. Normalization and coercion
+# 3. Standardization
+
+# Helper functions
+
+clean_text <- function(x) {
+  x |>
+    str_squish() |>
+    str_to_lower() |> 
+    na_if("") 
+}
+
+clean_id <- function(x) {
+  x |>
+    str_replace_all("\\s+", "") |>
+    na_if("")
+}
+
+
+clean_house_addition <- function(x) {
+  x |>
+    str_replace_all("\\s+", "") |>
+    str_to_upper() |>
+    na_if("")
+}
+
+clean_postcode <- function(x) {
+  x <- x |> 
+    str_remove_all(" ") |> 
+    str_to_upper()
+  
+  case_when(
+    str_detect(x, "^[1-9][0-9]{3}[A-Z]{2}$") ~ x,
+    TRUE ~ NA_character_
   )
+}
+
+clean_status <- function(x) {
+  x |>
+    str_squish() |>
+    str_to_lower() |>
+    na_if("")
+}
+
+
+## ---- 1. ADDRESSES ---- ##
 
 addresses_raw <- read_csv(
   "01_raw/data/addresses.csv",
   col_types = cols(
-    id                  = col_character(),
-    postcode            = col_character(),
-    huisnummer          = col_integer(),
-    huisnummertoevoeging= col_character(),
-    openbareruimte      = col_character(),
-    begin_geldigheid    = col_character(),
-    eind_geldigheid     = col_character()
+    id                   = col_character(),
+    postcode             = col_character(),
+    huisnummer           = col_integer(),
+    huisnummertoevoeging = col_character(),
+    openbareruimte       = col_character(),
+    begin_geldigheid     = col_character(),
+    eind_geldigheid      = col_character()
   )
-) |> 
-  mutate(across(where(is.character), ~ replace_na(.x, "")))
+)
+
+
+
+addresses_input <- addresses_raw |> 
+  mutate(
+    id_address      = clean_id(id),
+    house_addition  = clean_house_addition(huisnummertoevoeging),
+    house_number    = huisnummer,
+    id_public_space = clean_id(openbareruimte),
+    postcode        = clean_postcode(postcode),
+    start_valid     = ymd(begin_geldigheid),
+    end_valid       = ymd(eind_geldigheid)
+  ) |>
+  select(id_address, house_number, house_addition,
+         postcode,
+         id_public_space, start_valid, end_valid)
+
+
+## ---- 2. PUBLIC SPACES ---- ##
 
 public_spaces_raw <- read_csv(
   "01_raw/data/public_spaces.csv",
@@ -35,6 +94,24 @@ public_spaces_raw <- read_csv(
     eind_geldigheid  = col_character()
   )
 )
+
+public_spaces_input <- public_spaces_raw |> 
+  mutate(
+    id_public_space   = clean_id(id),
+    public_space_name = clean_text(naam),
+    public_space_type = clean_status(type),
+    town_id           = clean_id(woonplaats),
+    start_valid       = ymd(begin_geldigheid),
+    end_valid         = ymd(eind_geldigheid)
+  ) |> 
+  select(
+    id_public_space, public_space_name, public_space_type,
+    town_id, start_valid, end_valid
+  )
+
+
+
+## ---- 3. DWELLINGS ---- ##
 
 dwellings_raw <- read_csv(
   "01_raw/data/dwellings.csv",
@@ -52,6 +129,30 @@ dwellings_raw <- read_csv(
   )
 )
 
+dwellings_input <- dwellings_raw |> 
+  mutate(
+    id_dwelling     = clean_id(id),
+    usage_purpose   = clean_status(gebruiksdoel),
+    area_m2         = oppervlakte,
+    status_clean    = clean_status(status),
+    id_address      = clean_id(hoofdadres),
+    id_building     = clean_id(pand),
+    start_valid     = ymd(begin_geldigheid),
+    end_valid       = ymd(eind_geldigheid),
+    x_coord         = x,
+    y_coord         = y
+  ) |> 
+  select(
+    id_dwelling, usage_purpose, area_m2, status_clean,
+    id_address, id_building,
+    start_valid, end_valid,
+    x_coord, y_coord
+  )
+
+
+
+## ---- 4. TOWNS ---- ##
+
 towns_raw <- read_csv(
   "01_raw/data/towns.csv",
   col_types = cols(
@@ -65,6 +166,29 @@ towns_raw <- read_csv(
   )
 )
 
+towns_input <- towns_raw |> 
+  mutate(
+    id_town      = clean_id(id),
+    town_name    = clean_text(naam),
+    town_status  = clean_status(status),
+    
+    start_valid  = ymd(begin_geldigheid),
+    end_valid    = ymd(eind_geldigheid),
+    
+    x_coord      = as.numeric(x),
+    y_coord      = as.numeric(y)
+  ) |>
+  select(
+    id_town, town_name, town_status,
+    start_valid, end_valid,
+    x_coord, y_coord
+  )
+
+
+
+
+## ---- 5. MUNICIPALITIES ---- ##
+
 municipalities_raw <- read_csv(
   "01_raw/data/municipalities.csv",
   col_types = cols(
@@ -75,133 +199,138 @@ municipalities_raw <- read_csv(
     eind_geldigheid  = col_character()
   )
 )
-# 2. Clean SALES
-
-sales_input <- sales_raw |> 
-  mutate(
-    address = str_squish(str_to_lower(address))
-  ) |> 
-  extract(
-    col   = address,
-    into  = c("street_name", "house_number", "house_addition"),
-    regex = "^(.+?)\\s+(\\d+)(?:\\s*-?\\s*([[:alnum:]]+))?$",
-    remove = FALSE
-  ) |> 
-  mutate(
-    street_name   = street_name |> str_squish() |> str_to_lower(),
-    house_number   = as.integer(house_number),
-    house_addition = house_addition |> trimws() |> str_to_upper() |> replace_na(""),
-    postcode       = postcode |> str_replace_all(" ", "") |> str_to_upper(),
-    
-    city = city |>
-      str_to_lower() |>
-      str_replace_all("[^a-z0-9 ]", "") |>
-      str_squish(),
-    
-    sales_price = as.numeric(sales_price),
-    price_eur   = sales_price * 1000,
-    sale_date   = ymd(sale_date)
-  ) |> 
-  mutate(
-    sale_id = pmap_chr(
-      list(street_name, house_number, house_addition, postcode, sale_date, price_eur),
-      ~ digest(paste(
-        ifelse(is.na(..1), "", ..1),
-        ifelse(is.na(..2), "", ..2),
-        ifelse(is.na(..3), "", ..3),
-        ifelse(is.na(..4), "", ..4),
-        ifelse(is.na(..5), "", ..5),
-        ifelse(is.na(..6), "", ..6),
-        sep = "_"
-      ), algo = "sha1")
-    )
-  ) |> 
-  relocate(sale_id) |> 
-  select(sale_id, street_name, house_number, house_addition,
-         postcode, city, sale_date, price_eur)
 
 
-# 3. Clean ADDRESSES
-addresses_input <- addresses_raw |> 
-  rename(
-    house_number   = huisnummer,
-    house_addition = huisnummertoevoeging
-  ) |> 
-  mutate(
-    postcode       = postcode |> str_replace_all(" ", "") |> str_to_upper(),
-    house_number   = as.integer(house_number),
-    house_addition = house_addition |> trimws() |> str_to_upper() |> replace_na(""),
-    address_id     = as.character(id),
-    public_space_id= as.character(openbareruimte),
-    start_valid    = ymd(begin_geldigheid),
-    end_valid      = ymd(eind_geldigheid)
-  ) |> 
-  select(address_id, postcode, house_number, house_addition,
-         public_space_id, start_valid, end_valid)
 
-
-# 4. Clean PUBLIC SPACES
-
-public_spaces_input <- public_spaces_raw |> 
-  mutate(
-    public_space_id   = as.character(id),
-    public_space_name = str_to_lower(naam),
-    public_space_type = str_to_lower(type),
-    town_id           = as.character(woonplaats),
-    start_valid       = ymd(begin_geldigheid),
-    end_valid         = ymd(eind_geldigheid)
-  ) |> 
-  select(public_space_id, public_space_name, public_space_type,
-         town_id, start_valid, end_valid)
-
-
-# 5. Clean DWELLINGS
-
-dwellings_input <- dwellings_raw |> 
-  mutate(
-    dwelling_id  = as.character(id),
-    address_id   = as.character(hoofdadres),
-    id_building  = as.character(pand),
-    start_valid  = ymd(begin_geldigheid),
-    end_valid    = ymd(eind_geldigheid),
-    area_m2      = oppervlakte
-  ) |> 
-  select(dwelling_id, address_id, id_building, start_valid,
-         end_valid, gebruiksdoel, area_m2, x, y)
-
-
-# 6. Clean TOWNS
-
-
-towns_input <- towns_raw |> 
-  mutate(
-    town_id     = as.character(id),
-    town_name   = str_to_lower(naam),
-    start_valid = ymd(begin_geldigheid),
-    end_valid   = ymd(eind_geldigheid)
-  ) |> 
-  select(town_id, town_name, 
-         start_valid, end_valid, status, x, y)
-
-# 7. Clean MUNICIPALITIES
 
 municipalities_input <- municipalities_raw |> 
   mutate(
-    town_id         = as.character(woonplaats_id),
-    municipality_id = as.character(gemeente_id),
-    start_valid     = ymd(begin_geldigheid),
-    end_valid       = ymd(eind_geldigheid)
+    id_town             = clean_id(woonplaats_id),
+    id_municipality     = clean_id(gemeente_id),
+    municipality_status = clean_status(status),
+    
+    start_valid         = ymd(begin_geldigheid),
+    end_valid           = ymd(eind_geldigheid)
+  ) |>
+  select(
+    id_town, id_municipality,
+    municipality_status,
+    start_valid, end_valid
+  )
+
+
+## ---- 6. BUILDINGS ---- ##
+
+buildings_raw <- read_csv(
+  "01_raw/data/buildings.csv",
+  col_types = cols(
+    id               = col_character(),
+    bouwjaar         = col_integer(),
+    pandstatus       = col_character(),
+    begin_geldigheid = col_character(),
+    eind_geldigheid  = col_character(),
+    x                = col_double(),
+    y                = col_double()
+  )
+)
+
+buildings_input <- buildings_raw |> 
+  mutate(
+    id_building       = clean_id(id),
+    construction_year = bouwjaar,
+    building_status   = clean_status(pandstatus),
+    
+    start_valid       = ymd(begin_geldigheid),
+    end_valid         = ymd(eind_geldigheid),
+    
+    x_coord           = as.numeric(x),
+    y_coord           = as.numeric(y)
+  ) |>
+  select(
+    id_building,
+    construction_year,
+    building_status,
+    start_valid, end_valid,
+    x_coord, y_coord
+  )
+
+
+## ---- 7. SALES ---- ##
+
+
+sales_raw <- read_csv(
+  "01_raw/data/sales.csv",
+  col_types = cols(.default = col_character())
+)
+
+
+sales_input <- sales_raw |> 
+  mutate(
+    full_address    = clean_text(address),
+    town_name       = clean_text(city),
+    
+    postcode        = clean_postcode(postcode),
+    
+    sales_price_eur = as.numeric(sales_price) * 1000,
+    
+    sale_date       = ymd(sale_date)
   ) |> 
-  select(town_id, municipality_id, status, start_valid, end_valid)
+  extract(
+    col   = full_address,
+    into  = c("street_name", "house_number", "house_addition"),
+    regex = "^(.+?)\\s+(\\d+)([A-Za-z\\-0-9]*)$",
+    remove = FALSE,
+    # Allow failures so rows without a clean match do not become NA for all extracted fields
+    convert = FALSE
+  ) |> 
+  mutate(
+    street_name     = clean_text(street_name),
+    house_number    = as.integer(house_number),
+    house_addition  = clean_house_addition(house_addition)
+  ) |> 
+  select(
+    full_address, street_name, house_number, house_addition,
+    postcode, town_name, sales_price_eur, sale_date
+  )
 
 
-# Step 8: Write Steady State 1 files
 
-dir.create("01_raw/data/input/", recursive = TRUE)
+# Deduplicate all BAG files
 
-write_rds(sales_input,         "01_raw/data/input/sales_input.rds")
-write_rds(addresses_input,     "01_raw/data/input/addresses_input.rds")
-write_rds(dwellings_input,     "01_raw/data/input/dwellings_input.rds")
-write_rds(public_spaces_input, "01_raw/data/input/public_spaces_input.rds")
-write_rds(towns_input,         "01_raw/data/input/towns_input.rds")
-write_rds(municipalities_input,"01_raw/data/input/municipalities_input.rds")
+# Deduplicate all BAG files
+
+addresses_input <- addresses_input |>
+  arrange(id_address, start_valid) |>
+  distinct(id_address, .keep_all = TRUE)
+
+public_spaces_input <- public_spaces_input |>
+  arrange(id_public_space, start_valid) |>
+  distinct(id_public_space, .keep_all = TRUE)
+
+towns_input <- towns_input |>
+  arrange(id_town, start_valid) |>
+  distinct(id_town, .keep_all = TRUE)
+
+municipalities_input <- municipalities_input |>
+  arrange(id_town, start_valid) |>
+  distinct(id_town, .keep_all = TRUE)
+
+buildings_input <- buildings_input |>
+  arrange(id_building, start_valid) |>
+  distinct(id_building, .keep_all = TRUE)
+
+
+
+# Save all modified files 
+
+dir.create("data/processed", recursive = TRUE)
+
+write_rds(sales_input,         "data/processed/sales_input.rds")
+write_rds(addresses_input,     "data/processed/addresses_input.rds")
+write_rds(dwellings_input,     "data/processed/dwellings_input.rds")
+write_rds(public_spaces_input, "data/processed/public_spaces_input.rds")
+write_rds(towns_input,         "data/processed/towns_input.rds")
+write_rds(municipalities_input,"data/processed/municipalities_input.rds")
+write_rds(buildings_input,"data/processed/buildings_input.rds")
+
+

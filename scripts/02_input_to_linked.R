@@ -1,99 +1,101 @@
 # 02_input_to_linked.R
-# Steady State 1 (input) → Steady State 3 (linked & harmonised)
+
 # Probabilistic address linkage using reclin2
+
+# Helper function
+
+clean_name <- function(x) {
+  x |>
+    str_to_lower() |>
+    str_replace_all("[^a-z0-9 ]", " ") |>
+    str_squish()
+}
 
 # Step 0 — Load cleaned input data (Steady State 1)
 
 
-sales_input          <- read_rds("01_raw/data/input/sales_input.rds")
-addresses_input      <- read_rds("01_raw/data/input/addresses_input.rds")
-dwellings_input      <- read_rds("01_raw/data/input/dwellings_input.rds")
-public_spaces_input  <- read_rds("01_raw/data/input/public_spaces_input.rds")
-towns_input          <- read_rds("01_raw/data/input/towns_input.rds")
-municipalities_input <- read_rds("01_raw/data/input/municipalities_input.rds")
+sales_input         <- read_rds("data/processed/sales_input.rds")
+addresses_input     <- read_rds("data/processed/addresses_input.rds")
+dwellings_input     <- read_rds("data/processed/dwellings_input.rds")
+public_spaces_input <- read_rds("data/processed/public_spaces_input.rds")
+towns_input         <- read_rds("data/processed/towns_input.rds")
+municipalities_input<- read_rds("data/processed/municipalities_input.rds")
+buildings_input     <- read_rds("data/processed/buildings_input.rds")
+
+sales         <- sales_input
+addresses     <- addresses_input
+public_spaces <- public_spaces_input
+towns         <- towns_input
+dwellings     <- dwellings_input
+municipalities<- municipalities_input
+buildings     <- buildings_input
 
 
-# Step 1–5 — Deduplicate BAG register tables
+# Step 1 — Build BAG reference table
 
-addresses_clean <- addresses_input |> 
-  arrange(address_id, desc(start_valid)) |> 
-  distinct(address_id, .keep_all = TRUE)
-
-public_spaces_clean <- public_spaces_input |> 
-  arrange(public_space_id, desc(start_valid)) |> 
-  distinct(public_space_id, .keep_all = TRUE)
-
-dwellings_clean <- dwellings_input |> 
-  arrange(dwelling_id, desc(start_valid)) |> 
-  distinct(dwelling_id, .keep_all = TRUE)
-
-towns_clean <- towns_input |> 
-  arrange(town_id, desc(start_valid)) |> 
-  distinct(town_id, .keep_all = TRUE)
-
-municipalities_clean <- municipalities_input |> 
-  arrange(town_id, municipality_id, desc(start_valid)) |> 
-  distinct(town_id, municipality_id, .keep_all = TRUE)
-
-
-# Step 6 — Build BAG reference table
-
-bag_addresses <- addresses_clean |> 
+bag_addresses <- addresses |>
   left_join(
-    public_spaces_clean |> 
-      select(public_space_id, public_space_name, town_id),
-    by = "public_space_id"
-  ) |> 
+    public_spaces |>
+      select(id_public_space, public_space_name, town_id),
+    by = "id_public_space"
+  ) |>
   left_join(
-    towns_clean |> 
-      select(town_id, town_name),
-    by = "town_id"
-  ) |> 
+    towns |>
+      select(id_town, town_name),
+    by = c("town_id" = "id_town")
+  ) |>
   transmute(
-    address_id,
+    address_id    = id_address,
     postcode,
     house_number,
     house_addition,
-    street_name = public_space_name,
-    city        = town_name,
+    street_name   = public_space_name,
+    city          = town_name,
     town_id
   )
 
+# Step 2 — Prepare SALES and BAG tables for linkage
 
-# Step 7 — Harmonise variable types & normalise city/street names
 
 
-sales <- sales_input |> 
-  mutate(
+# Sales linkage table
+sales_link <- sales |>
+  transmute(
+    sale_id        = row_number(),               # explicit ID per sale
+    street_name    = clean_name(street_name),
     house_number   = as.character(house_number),
     house_addition = as.character(house_addition),
     postcode       = as.character(postcode),
-    city           = str_to_lower(city)
+    city           = clean_name(town_name),
+    sale_date      = sale_date,
+    price_eur      = sales_price_eur
   )
 
-bag_addresses <- bag_addresses |> 
+# BAG linkage table
+bag_link <- bag_addresses |>
   mutate(
+    street_name    = clean_name(street_name),
+    city           = clean_name(city),
     house_number   = as.character(house_number),
     house_addition = as.character(house_addition),
-    postcode       = as.character(postcode),
-    street_name    = as.character(street_name),
-    city = city |> 
-      str_to_lower() |> 
-      str_replace_all("[^a-z0-9 ]", "") |> 
-      str_squish()
+    postcode       = as.character(postcode)
   )
 
+message("Sales rows: ", nrow(sales_link))
+message("BAG address rows: ", nrow(bag_link))
 
-# Step 8 — Generate candidate pairs 
 
-pairs_pc   <- pair_blocking(sales, bag_addresses, "postcode")
-pairs_city <- pair_blocking(sales, bag_addresses, "city")
+# Step 3 — Generate candidate pairs 
+
+pairs_pc   <- pair_blocking(sales_link, bag_link, "postcode")
+pairs_city <- pair_blocking(sales_link, bag_link, "city")
+
 
 link_pairs <- merge_pairs(pairs_pc, pairs_city)
 
 message("Candidate pairs: ", nrow(link_pairs))
 
-# Step 9 — Compare pairs with correct comparators
+# Step 4 — Compare pairs
 
 link_pairs <- compare_pairs(
   link_pairs,
@@ -107,8 +109,7 @@ link_pairs <- compare_pairs(
   inplace = TRUE
 )
 
-
-# Step 10 — Score pairs
+# Step 5 — Score pairs
 
 
 link_pairs <- score_simple(
@@ -125,18 +126,17 @@ link_pairs <- score_simple(
   wna = 0
 )
 
-message("Score range: ", paste(range(link_pairs$score, na.rm = TRUE), collapse = " – "))
+message("Score range: ", paste(range(link_pairs$score, na.rm = TRUE), 
+                               collapse = " – "))
 
 
-# Decide on a threshold for linking based on the 
+# Decide on a threshold for linking based on the histogram
 
 # hist(link_pairs$score, breaks = 100)
 # summary(link_pairs$score)
-# quantile(link_pairs$score, seq(0,1,0.01))
 
 
-
-# Step 11 — Select pairs above threshold
+# Step 6 — Threshold + one-to-one greedy selection
 
 THRESHOLD <- 7.5
 
@@ -151,9 +151,6 @@ message("Pairs above threshold: ", sum(link_pairs$threshold))
 
 
 
-# Step 12 — Enforce one-to-one linking (greedy)
-
-
 link_pairs <- select_greedy(
   link_pairs,
   score = "score",
@@ -161,80 +158,80 @@ link_pairs <- select_greedy(
   threshold = THRESHOLD
 )
 
-# Step 13 — Create linked dataset
+# Step 7 — Build linked datased
 
-linked_sales_addresses <- link(
+
+linked_raw <- link(
   link_pairs,
   selection = "greedy"
 )
 
-message("Linked records created: ", nrow(linked_sales_addresses))
+message("Linked records created: ", nrow(linked_raw))
 
 
-# Replace empty names with safe placeholders
-names(linked_sales_addresses) <- make.names(names(linked_sales_addresses), unique = TRUE)
+# Replace with safe names 
 
+names(linked_raw) <- make.names(names(linked_raw), 
+                                unique = TRUE)
 
-# Rename into meaningful variable names
-names(linked_sales_addresses)[1:17] <- c(
-  "bag_row", "sales_row",
-  "sale_id",
-  "street_name_sales",
-  "house_number_sales",
-  "house_addition_sales",
-  "postcode_sales",
-  "city_sales",
-  "sale_date",
-  "price_eur",
-  "address_id",
-  "postcode_bag",
-  "house_number_bag",
-  "house_addition_bag",
-  "street_name_bag",
-  "city_bag",
-  "town_id"
-)
-
-# Step 15 — Re-join the score & create flags
-
-
-linked_sales_addresses <- linked_sales_addresses |> 
-  left_join(
-    link_pairs |> 
-      as_tibble() |> 
-      select(.x, .y, score),
-    by = c("sales_row" = ".x", "bag_row" = ".y")
+# Add score + address flags
+linked_scored <- linked_raw |> 
+  rename(
+    bag_row               = .y,
+    sales_row             = .x,
+    street_name_sales     = street_name.x,
+    house_number_sales    = house_number.x,
+    house_addition_sales  = house_addition.x,
+    postcode_sales        = postcode.x,
+    city_sales            = city.x,
+    postcode_bag          = postcode.y,
+    house_number_bag      = house_number.y,
+    house_addition_bag    = house_addition.y,
+    street_name_bag       = street_name.y,
+    city_bag              = city.y
   ) |> 
+  left_join(
+    link_pairs |> as_tibble() |> select(.x, .y, score),
+    by = c("sales_row" = ".x", "bag_row" = ".y")
+  ) |>
   mutate(
     flag_address_prob = if_else(!is.na(address_id), 1L, 0L),
     linkage_weight    = score
   )
 
 
-# Step 16 — Join dwellings (address_id → dwelling_id)
-
-
-linked_sales_addresses <- linked_sales_addresses |>
+# Merge dwellings
+linked_final <- linked_scored |>
   left_join(
-    dwellings_clean |> 
-      select(address_id, dwelling_id, id_building, area_m2,
-             gebruiksdoel, x, y),
-    by = "address_id"
+    dwellings |> 
+      select(
+        id_address,
+        id_dwelling,
+        id_building,
+        area_m2,
+        usage_purpose,
+        x_coord,
+        y_coord
+      ),
+    by = c("address_id" = "id_address")
   ) |>
   mutate(
-    flag_dwelling_link = if_else(!is.na(dwelling_id), 1L, 0L)
+    flag_dwelling_link = if_else(!is.na(id_dwelling), 1L, 0L)
   )
 
-message("Matched sales: ", sum(linked_sales_addresses$flag_address_prob))
-message("Unmatched sales: ", sum(linked_sales_addresses$flag_address_prob == 0))
-message("Linked dwellings: ", sum(linked_sales_addresses$flag_dwelling_link))
+
+message("Matched sales: ", sum(linked_final$flag_address_prob,
+                               na.rm = TRUE))
+message("Unmatched sales: ", sum(linked_final$flag_address_prob == 0, 
+                                 na.rm = TRUE))
+message("Linked dwellings: ", sum(linked_final$flag_dwelling_link, 
+                                  na.rm = TRUE))
 
 
-# Step 17 — Save Steady State 3
+
+# Step 8: Save steady state
 
 
-dir.create("02_processed", showWarnings = FALSE)
+write_rds(linked_sales_addresses, "data/processed/linked_sales_addresses.rds")
 
-# write_rds(linked_sales_addresses, "02_processed/linked_sales_addresses.rds")
-
-message("Steady State 3 written to 02_processed/linked_sales_addresses.rds")
+message("Steady State 3 written to data/processed/linked_sales_addresses.rds")

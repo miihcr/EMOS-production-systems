@@ -1,15 +1,15 @@
 # Ignore raw and processed data folders
 
-# Raw data (inside 01_raw/)
-01_raw/data/
+# Raw and input data 
+data/
+data/*
 
-# Processed / input data (global data folder)
-02_input/data/
 
 # R and RStudio
 .Rhistory
 .RData
 .Rproj.user/
+.Rprofile
 .Ruserdata
 
 # OS/editor files
