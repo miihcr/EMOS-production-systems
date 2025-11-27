@@ -497,26 +497,4 @@ sales_input <- sales_raw |>
 
 ```
 
-# Validation rules
-
-## 1. Addresses
-
-Level 0 (ssss)
-
-| Variable     | Validation needed                                 |
-|--------------|---------------------------------------------------|
-| id_address   | !is.na(id_address)                                |
-| house_number | house_number \> 0                                 |
-| postcode     | str_detect(postcode, "\^[1-9][0-9]{3}[A-Z]{2}\$") |
-| start_valid  | !is.na(start_valid)                               |
-| end_valid    | is.na(end_valid) \| end_valid \>= start_valid     |
-
-Level 2 (ssms)
-
-| Variable     | Validation needed                                 |
-|--------------|---------------------------------------------------|
-| id_address   | !is.na(id_address)                                |
-| house_number | house_number \> 0                                 |
-| postcode     | str_detect(postcode, "\^[1-9][0-9]{3}[A-Z]{2}\$") |
-| start_valid  | !is.na(start_valid)                               |
-| end_valid    | is.na(end_valid) \| end_valid \>= start_valid     |
+# 
