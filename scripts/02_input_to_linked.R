@@ -60,8 +60,7 @@ bag_addresses <- addresses |>
 
 # Sales linkage table
 sales_link <- sales |>
-  transmute(
-    sale_id        = row_number(),               # explicit ID per sale
+  transmute(             
     street_name    = clean_name(street_name),
     house_number   = as.character(house_number),
     house_addition = as.character(house_addition),
@@ -202,19 +201,49 @@ linked_scored <- linked_raw |>
   )
 
 
+
+# Choose one primary dwelling per address for linkage
+dwellings_primary <- dwellings |>
+  # 1) Prefer residential dwellings (woonfunctie)
+  mutate(
+    is_residential = usage_purpose == "woonfunctie",
+    is_in_use = status_clean %in% c(
+      "verblijfsobject in gebruik",
+      "verblijfsobject in gebruik (niet ingemeten)",
+      "verblijfsobject gevormd"
+    )
+  ) |>
+  group_by(id_address) |>
+  # 2) Sort by most relevant:
+  #    - residential first
+  #    - in use / formed first
+  #    - largest area_m2 as tiebreaker
+  arrange(
+    id_address,
+    desc(is_residential),
+    desc(is_in_use),
+    desc(area_m2)
+  ) |>
+  slice(1) |>
+  ungroup() |>
+  select(
+    id_address,
+    id_dwelling,
+    id_building,
+    area_m2,
+    usage_purpose,
+    x_coord,
+    y_coord
+  )
+
+
+
+
 # Merge dwellings
+
 linked_final <- linked_scored |>
   left_join(
-    dwellings |> 
-      select(
-        id_address,
-        id_dwelling,
-        id_building,
-        area_m2,
-        usage_purpose,
-        x_coord,
-        y_coord
-      ),
+    dwellings_primary,
     by = c("address_id" = "id_address")
   ) |>
   mutate(

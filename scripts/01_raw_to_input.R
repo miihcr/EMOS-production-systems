@@ -318,6 +318,11 @@ buildings_input <- buildings_input |>
   arrange(id_building, start_valid) |>
   distinct(id_building, .keep_all = TRUE)
 
+dwellings_input <- dwellings_input |>
+  arrange(id_dwelling, desc(start_valid)) |>
+  distinct(id_dwelling, .keep_all = TRUE)
+
+
 
 
 # Save all modified files 

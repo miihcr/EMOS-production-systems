@@ -81,7 +81,6 @@ final <- final |>
 linked_dataset <- final |>
   select(
     # Identifiers
-    sale_id,
     address_id,
     dwelling_id,
     id_building,
@@ -129,7 +128,6 @@ final_dataset <- final |>
   ) |>
   select(
     # Identifiers
-    sale_id,
     address_id,
     dwelling_id,
     id_building,
