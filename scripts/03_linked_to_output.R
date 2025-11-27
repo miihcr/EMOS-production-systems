@@ -1,7 +1,6 @@
 # 03_linked_to_output.R
 
 
-
 # Step 0 — Load linked input 
 
 
@@ -79,7 +78,7 @@ final <- final |>
 
 # Step 5 — Select the final output structure
 
-final_output <- final |>
+linked_dataset <- final |>
   select(
     # Identifiers
     sale_id,
@@ -120,9 +119,53 @@ final_output <- final |>
   )
 
 
+final_dataset <- final |>
+  mutate(
+    address_street    = coalesce(bag_street, sale_street),
+    address_house_nr  = coalesce(bag_house_num, sale_house_num),
+    address_house_add = coalesce(bag_house_add, sale_house_add),
+    address_postcode  = coalesce(bag_postcode, sale_postcode),
+    address_city      = coalesce(bag_city, sale_city)
+  ) |>
+  select(
+    # Identifiers
+    sale_id,
+    address_id,
+    dwelling_id,
+    id_building,
+    municipality_id,
+    
+    # Canonical address
+    address_street,
+    address_house_nr,
+    address_house_add,
+    address_postcode,
+    address_city,
+    town_id,
+    
+    # Original sales data (keep if needed)
+    sale_date,
+    price_eur,
+    
+    # Dwelling attributes
+    usage_purpose,
+    area_m2,
+    x_coord,
+    y_coord,
+    
+    # Linkage info
+    linkage_weight,
+    flag_address_prob,
+    flag_dwelling_link,
+    flag_municip_link,
+    linkage_success
+  )
+
+
+
 # Step 6 — Save the final output
 
-write_rds(final_output, "data/processed/final_dataset.rds")
+write_rds(final_dataset, "data/processed/final_dataset.rds")
 
 
 message("SS4 successfully written to data/processed/final_dataset.rds")
