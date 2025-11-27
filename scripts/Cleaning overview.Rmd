@@ -1,0 +1,522 @@
+---
+title: "01_raw_to_input"
+author: "Milena Costa"
+date: "2025-11-26"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+take_look <- function(df) {
+  glimp <- glimpse(df)
+  summ  <- summary(df)
+  rows  <- head(df)
+  
+  list(
+    glimpse = glimp,
+    summary = summ,
+    head = rows
+  )
+}
+
+
+```
+
+# From Raw to Technically Correct Data
+
+We use the following packages:
+
+-   **`readr`** for reading text data
+
+-   **`dplyr` / `tidyr`** for cleaning and transforming
+
+```         
+**`stringr`** for string cleaning
+```
+
+-   **`lubridate`** for dates
+
+-   **`forcats`** for categorical variables
+
+The steps are:
+
+1.   Inspection
+
+<!-- -->
+
+2.  Normalization and coercion
+3.   Standard naming conventions
+4.   Preparation for validation
+
+# 1. Addresses.csv
+
+# Inspection
+
+```{r}
+
+addresses_raw <- read_csv(
+  "01_raw/data/addresses.csv",
+  col_types = cols(
+    id                   = col_character(),
+    postcode             = col_character(),
+    huisnummer           = col_integer(),
+    huisnummertoevoeging = col_character(),
+    openbareruimte       = col_character(),
+    begin_geldigheid     = col_character(),
+    eind_geldigheid      = col_character()
+  )
+)
+
+glimpse(addresses_raw)
+summary(addresses_raw)
+head(addresses_raw, 20)
+
+```
+
+Based on the above output, we identify the following:
+
+| Variable | Notes | Domain |
+|------------------------|------------------------|------------------------|
+| id | as character (already done) |  |
+| postcode | already uppercase, no space, correct style |  |
+| huisnummer | integer, in english | must be \> 0 |
+| huisnummertoevoeging | needs to be normalized to uppercase, in english |  |
+| openbareruimte | must be made ID |  |
+| begin_geldigheid | convert to date, english |  |
+| eind_geldigheid | convert to date, english | \>= begin_geldigheid or NA |
+
+```{r}
+
+addresses_input <- addresses_raw |> 
+  # 1. Normalize all character fields
+   mutate(
+    across(where(is.character), str_squish), # remove spaces
+    across(where(is.character), ~na_if(.x, "")), # empty strings become NA
+  ) |> 
+  
+  # Create id 
+  mutate(
+    id_address       = id,
+    id_public_space  = openbareruimte,
+ 
+  # 2. Standardize house_addition to uppercase (NL conventions)
+    house_addition = huisnummertoevoeging |> # english
+      str_replace_all("^-$", "") |>  # removes hyphen
+      na_if("") |>  # empty strings become NA
+      str_to_upper(), # uppercase
+      house_number = huisnummer # english
+  ) |> 
+  
+    # 3. Postcode normalization (standard NL format)
+  mutate(
+    postcode = postcode |> 
+      str_remove_all(" ") |> 
+      str_to_upper() |> 
+      str_extract("^[0-9]{4}[A-Z]{2}$")   # keep only valid patterns
+  ) |> 
+
+  # 4. Convert dates to Date type
+  mutate(
+    start_valid     = ymd(begin_geldigheid),
+    end_valid       = ymd(eind_geldigheid)
+  ) |> 
+  select(id_address, house_number, house_addition,
+         id_public_space, start_valid, end_valid)
+  
+
+```
+
+```{r}
+
+glimpse(addresses_input)
+
+```
+
+## Preparation for validation
+
+# 2. Public_spaces.csv
+
+```{r}
+
+public_spaces_raw <- read_csv(
+  "01_raw/data/public_spaces.csv",
+  col_types = cols(
+    id               = col_character(),
+    naam             = col_character(),
+    type             = col_character(),
+    woonplaats       = col_character(),
+    begin_geldigheid = col_character(),
+    eind_geldigheid  = col_character()
+  )
+)
+
+glimpse(public_spaces_raw)
+summary(public_spaces_raw)
+head(public_spaces_raw, 20)
+
+
+```
+
+```{r}
+
+public_spaces_input <- public_spaces_raw |> 
+  # 1. Normalize all text fields
+  mutate(
+    across(where(is.character), str_squish),
+    across(where(is.character), ~ na_if(.x, ""))
+  ) |>
+  
+  # 2. Create consistently named English variables
+  mutate(
+    id_public_space = id,
+    name            = naam,
+    type_public_space = str_to_lower(type), # Normalize: Weg to weg
+    town_id         = woonplaats,
+    
+    # 3. Convert dates
+    start_valid = ymd(begin_geldigheid),
+    end_valid   = ymd(eind_geldigheid)
+  ) |>
+  
+  # 4. Select and order clean columns
+  select(id_public_space, name, type_public_space, town_id, start_valid, end_valid)
+
+```
+
+```{r}
+glimpse(public_spaces_input)
+```
+
+## Prepare for validation
+
+# 3. Dwellings.csv
+
+```{r}
+
+dwellings_raw <- read_csv(
+  "01_raw/data/dwellings.csv",
+  col_types = cols(
+    id               = col_character(),
+    gebruiksdoel     = col_character(),
+    oppervlakte      = col_integer(),
+    status           = col_character(),
+    hoofdadres       = col_character(),
+    pand             = col_character(),
+    begin_geldigheid = col_character(),
+    eind_geldigheid  = col_character(),
+    x                = col_double(),
+    y                = col_double()
+  )
+)
+
+
+take_look(dwellings_raw)
+```
+
+| Column           | Target Variable | Cleaning needed?                  |
+|------------------|-----------------|-----------------------------------|
+| id               | id_residence    | verblijfsobject ID                |
+| gebruiksdoel     | usage_purpose   | should be lowercase categories    |
+| oppervlakte      | area_m2         | numeric                           |
+| status           | status          | needs standardization (lowercase) |
+| hoofdadres       | id_address      | foreign key to addresses table    |
+| pand             | id_building     | foreign key to building table     |
+| begin_geldigheid | start_valid     | convert to Date                   |
+| eind_geldigheid  | end_valid       | convert to Date                   |
+| x                | x_coord         | numeric coordinate                |
+| y                | y_coord         | numeric coordinate                |
+
+```{r}
+
+dwellings_input <- dwellings_raw |> 
+  # 1. Normalize all text fields
+  mutate(
+    across(where(is.character), str_squish),
+    across(where(is.character), ~na_if(.x, ""))
+  ) |>
+  
+  # 2. Rename & standardize column names
+  mutate(
+    id_dwelling   = id,
+    usage_purpose  = str_to_lower(gebruiksdoel),
+    area_m2        = oppervlakte,
+    status_clean   = str_to_lower(status),
+    id_address     = hoofdadres,
+    id_building    = pand,
+
+    # 3. Dates
+    start_valid = ymd(begin_geldigheid),
+    end_valid   = ymd(eind_geldigheid),
+
+    # 4. Coordinates
+    x_coord = x,
+    y_coord = y
+  ) |>
+
+  # Only keep cleaned variables
+  select(
+    id_dwelling, usage_purpose, area_m2, status_clean,
+    id_address, id_building,
+    start_valid, end_valid,
+    x_coord, y_coord
+  )
+
+take_look(dwellings_input)
+```
+
+# 4. Towns.csv
+
+```{r}
+
+towns_raw <- read_csv(
+  "01_raw/data/towns.csv",
+  col_types = cols(
+    id               = col_character(),
+    naam             = col_character(),
+    status           = col_character(),
+    begin_geldigheid = col_character(),
+    eind_geldigheid  = col_character(),
+    x                = col_double(),
+    y                = col_double()
+  )
+)
+
+take_look(towns_raw)
+```
+
+| Raw Column       | English Name  | Notes                             |
+|------------------|---------------|-----------------------------------|
+| id               | id_residence  | verblijfsobject ID                |
+| gebruiksdoel     | usage_purpose | should be lowercase categories    |
+| oppervlakte      | area_m2       | numeric                           |
+| status           | status        | needs standardization (lowercase) |
+| hoofdadres       | id_address    | foreign key to addresses table    |
+| pand             | id_building   | foreign key to building table     |
+| begin_geldigheid | start_valid   | convert to Date                   |
+| eind_geldigheid  | end_valid     | convert to Date                   |
+| x                | x_coord       | numeric coordinate                |
+| y                | y_coord       | numeric coordinate                |
+
+```{r}
+towns_input <- towns_raw |> 
+  # 1. Normalize character fields
+  mutate(
+    across(where(is.character), str_squish),
+    across(where(is.character), ~na_if(.x, ""))
+  ) |>
+  
+  # 2. Rename + standardize
+  mutate(
+    id_town      = id,
+    town_name    = naam,
+    town_status  = str_to_lower(status),
+    start_valid  = ymd(begin_geldigheid),
+    end_valid    = ymd(eind_geldigheid),
+    x_coord      = x,
+    y_coord      = y
+  ) |>
+  
+  # 3. Select final cleaned vars
+  select(
+    id_town, town_name, town_status,
+    start_valid, end_valid,
+    x_coord, y_coord
+  )
+```
+
+# 5. Municipalities.csv
+
+```{r}
+municipalities_raw <- read_csv(
+  "01_raw/data/municipalities.csv",
+  col_types = cols(
+    woonplaats_id    = col_character(),
+    gemeente_id      = col_character(),
+    status           = col_character(),
+    begin_geldigheid = col_character(),
+    eind_geldigheid  = col_character()
+  )
+)
+
+take_look(municipalities_raw)
+```
+
+```{r}
+municipalities_input <- municipalities_raw |>
+  # 1. Clean whitespace and missing values
+  mutate(
+    across(where(is.character), str_squish),
+    across(where(is.character), ~na_if(.x, ""))
+  ) |>
+
+  # 2. Standardize & rename
+  mutate(
+    id_town         = woonplaats_id,
+    id_municipality = gemeente_id,
+    municipality_status = str_to_lower(status),
+    start_valid     = ymd(begin_geldigheid),
+    end_valid       = ymd(eind_geldigheid)
+  ) |>
+
+  # 3. Select cleaned columns
+  select(
+    id_town,
+    id_municipality,
+    municipality_status,
+    start_valid,
+    end_valid
+  )
+```
+
+# 6. Buildings.csv
+
+```{r}
+
+buildings_raw <- read_csv(
+  "01_raw/data/buildings.csv",
+  col_types = cols(
+    id               = col_character(),
+    bouwjaar         = col_integer(),
+    pandstatus       = col_character(),
+    begin_geldigheid = col_character(),
+    eind_geldigheid  = col_character(),
+    x                = col_double(),
+    y                = col_double()
+  )
+)
+
+take_look(buildings_raw)
+
+```
+
+| Raw Column       | English Name  | Notes                             |
+|------------------|---------------|-----------------------------------|
+| id               | id_residence  | verblijfsobject ID                |
+| gebruiksdoel     | usage_purpose | should be lowercase categories    |
+| oppervlakte      | area_m2       | numeric                           |
+| status           | status        | needs standardization (lowercase) |
+| hoofdadres       | id_address    | foreign key to addresses table    |
+| pand             | id_building   | foreign key to building table     |
+| begin_geldigheid | start_valid   | convert to Date                   |
+| eind_geldigheid  | end_valid     | convert to Date                   |
+| x                | x_coord       | numeric coordinate                |
+| y                | y_coord       | numeric coordinate                |
+
+```{r}
+
+buildings_input <- buildings_raw |> 
+  # 1. Clean all text fields
+  mutate(
+    across(where(is.character), str_squish),
+    across(where(is.character), ~na_if(.x, ""))
+  ) |>
+
+  # 2. Standardize English variable names
+  mutate(
+    id_building        = id,
+    construction_year  = bouwjaar,
+    building_status    = str_to_lower(pandstatus),
+    start_valid        = ymd(begin_geldigheid),
+    end_valid          = ymd(eind_geldigheid),
+    x_coord            = x,
+    y_coord            = y
+  ) |>
+
+  # 3. Select cleaned variables
+  select(
+    id_building,
+    construction_year,
+    building_status,
+    start_valid,
+    end_valid,
+    x_coord,
+    y_coord
+  )
+
+```
+
+# 7. Sales.csv
+
+```{r}
+
+sales_raw <- read_csv(
+  "01_raw/data/sales.csv",
+  col_types = cols(.default = col_character())
+)
+
+take_look(sales_raw)
+
+```
+
+| Raw Column       | English Name  | Notes                             |
+|------------------|---------------|-----------------------------------|
+| id               | id_residence  | verblijfsobject ID                |
+| gebruiksdoel     | usage_purpose | should be lowercase categories    |
+| oppervlakte      | area_m2       | numeric                           |
+| status           | status        | needs standardization (lowercase) |
+| hoofdadres       | id_address    | foreign key to addresses table    |
+| pand             | id_building   | foreign key to building table     |
+| begin_geldigheid | start_valid   | convert to Date                   |
+| eind_geldigheid  | end_valid     | convert to Date                   |
+| x                | x_coord       | numeric coordinate                |
+| y                | y_coord       | numeric coordinate                |
+
+```{r}
+sales_input <- sales_raw |> 
+  # 1. Normalize text fields
+  mutate(
+    across(where(is.character), str_squish),
+    across(where(is.character), ~ na_if(.x, ""))
+  ) |>
+
+  # 2. Standardize variable names
+  mutate(
+    full_address   = address,
+    town_name      = city,
+    
+    # Normalize postcode format
+    postcode = postcode |>
+      str_remove_all(" ") |>
+      str_to_upper() |>
+      str_extract("^[0-9]{4}[A-Z]{2}$"),   # invalid patterns become NA
+    
+    # Convert sales price 
+    sales_price_eur = as.numeric(sales_price) * 1000,
+    
+    # Convert to proper Date
+    sale_date = ymd(sale_date)
+  ) |>
+
+  # 3. Select cleaned variables
+  select(full_address, postcode, town_name,
+         sales_price_eur, sale_date)
+
+```
+
+# Validation rules
+
+## 1. Addresses
+
+Level 0 (ssss)
+
+| Variable     | Validation needed                                 |
+|--------------|---------------------------------------------------|
+| id_address   | !is.na(id_address)                                |
+| house_number | house_number \> 0                                 |
+| postcode     | str_detect(postcode, "\^[1-9][0-9]{3}[A-Z]{2}\$") |
+| start_valid  | !is.na(start_valid)                               |
+| end_valid    | is.na(end_valid) \| end_valid \>= start_valid     |
+
+Level 2 (ssms)
+
+| Variable     | Validation needed                                 |
+|--------------|---------------------------------------------------|
+| id_address   | !is.na(id_address)                                |
+| house_number | house_number \> 0                                 |
+| postcode     | str_detect(postcode, "\^[1-9][0-9]{3}[A-Z]{2}\$") |
+| start_valid  | !is.na(start_valid)                               |
+| end_valid    | is.na(end_valid) \| end_valid \>= start_valid     |
