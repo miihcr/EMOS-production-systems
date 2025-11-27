@@ -5,6 +5,8 @@
 
 ## Folder structure
 
+Note: not all folders appear in the git yet, since currently they are empty.
+
 ```
 01_raw/      - raw inputs
 02_input/    - processed inputs
