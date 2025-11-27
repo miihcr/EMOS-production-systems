@@ -62,7 +62,7 @@ source("scripts/00_packages.R")
 
 ### Data
 
-All data is stored in data/raw and data/processed.
+All data is stored in `data/raw`and `data/processed`. Eventually they will be moved to its correct steady state. 
 
 ### Run the analysis pipelines
 
