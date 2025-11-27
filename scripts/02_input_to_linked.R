@@ -54,8 +54,8 @@ bag_addresses <- addresses |>
     town_id
   )
 
-# Step 2 — Prepare SALES and BAG tables for linkage
 
+# Step 2 — Prepare SALES and BAG tables for linkage
 
 
 # Sales linkage table
@@ -70,6 +70,8 @@ sales_link <- sales |>
     sale_date      = sale_date,
     price_eur      = sales_price_eur
   )
+
+
 
 # BAG linkage table
 bag_link <- bag_addresses |>
@@ -232,6 +234,9 @@ message("Linked dwellings: ", sum(linked_final$flag_dwelling_link,
 # Step 8: Save steady state
 
 
-write_rds(linked_sales_addresses, "data/processed/linked_sales_addresses.rds")
+write_rds(linked_final, "data/processed/linked_final.rds")
 
-message("Steady State 3 written to data/processed/linked_sales_addresses.rds")
+
+message("Steady State 3 written to ")
+
+
