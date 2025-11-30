@@ -71,6 +71,7 @@ EMOS-production-systems.Rproj
 
 Make sure that the project contains the following folder structure:
 
+```
 EMOS-production-systems/
 ├── 01_raw/
 ├── 02_input/
@@ -89,6 +90,8 @@ EMOS-production-systems/
 │   ├── 03_linked_to_output.R
 │   └── output.R
 └── README.md
+
+```
 
 If the folders do not yet exist, you can create them automatically by running the following script from inside the RStudio project:
 source("scripts/00_create_directories.R")
