@@ -37,6 +37,7 @@ data/raw/
 ```
 The folder should look like this:
 
+```
 data/
 └── raw/
     ├── nummeraanduidingen.csv
@@ -46,7 +47,9 @@ data/
     ├── gemeente_woonplaats.csv
     ├── panden.csv
     └── sales3.csv
-    
+
+```
+  
 These files are required for the pipeline to run correctly.
 
 ## Setup
