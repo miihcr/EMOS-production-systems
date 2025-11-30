@@ -1,11 +1,12 @@
 # 01_raw_to_input.R
-# Convert RAW BAG + sales data -> INPUT (Steady State 1)
 
-# Every dataset follows a 4-step structure
 
-# 1. Inspection
-# 2. Normalization and coercion
-# 3. Standardization
+
+# Performs:
+
+#   1. Normalization & coercion
+#   2. Standardization
+#   3. Deduplication
 
 # Regex 
 
