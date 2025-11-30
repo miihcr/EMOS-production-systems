@@ -5,7 +5,7 @@
 
 ## Folder structure
 
-Note: not all folders appear in the git yet, since currently they are empty.
+Note: 
 
 ```
 01_raw/      - raw inputs
@@ -19,6 +19,35 @@ data/        - both raw and processed data
 
 ```
 ---
+
+## Data (important!)
+
+The data files used in this project are not included in the repository (they are too large and excluded through ``.gitignore``
+
+### Download the data manually
+
+Download the buildings register dataset:
+
+[Buildings register](https://research.cbs.nl/emos/buildings_register.zip) 
+
+Unzip the contents and place all raw CSV files into:
+
+```bash
+data/raw/
+```
+The folder should look like this:
+
+data/
+└── raw/
+    ├── nummeraanduidingen.csv
+    ├── openbareruimte.csv
+    ├── verblijfsobjecten.csv
+    ├── woonplaatsen.csv
+    ├── gemeente_woonplaats.csv
+    ├── panden.csv
+    └── sales3.csv
+    
+These files are required for the pipeline to run correctly.
 
 ## Setup
 
