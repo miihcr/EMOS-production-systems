@@ -26,3 +26,5 @@ final_dataset |>
 
 
 
+final_dataset |>
+  filter(address_city == "rosmalen") 
