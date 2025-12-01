@@ -13,7 +13,6 @@ clean_name <- function(x) {
 
 # Step 0 — Load cleaned input data (Steady State 1)
 
-
 sales_input         <- read_rds("data/processed/sales_input.rds")
 addresses_input     <- read_rds("data/processed/addresses_input.rds")
 dwellings_input     <- read_rds("data/processed/dwellings_input.rds")
@@ -36,13 +35,13 @@ buildings     <- buildings_input
 bag_addresses <- addresses |>
   left_join(
     public_spaces |>
-      select(id_public_space, public_space_name, town_id),
+      select(id_public_space, public_space_name, id_town),
     by = "id_public_space"
   ) |>
   left_join(
     towns |>
       select(id_town, town_name),
-    by = c("town_id" = "id_town")
+    by = c("id_town" = "id_town")
   ) |>
   transmute(
     address_id    = id_address,
@@ -51,9 +50,8 @@ bag_addresses <- addresses |>
     house_addition,
     street_name   = public_space_name,
     city          = town_name,
-    town_id
+    id_town
   )
-
 
 # Step 2 — Prepare SALES and BAG tables for linkage
 
@@ -104,7 +102,7 @@ link_pairs <- compare_pairs(
   comparators = list(
     house_number   = cmp_identical(),
     house_addition = cmp_identical(),
-    street_name    = cmp_jarowinkler(0.95),
+    street_name    = cmp_jarowinkler(0.90),
     city           = cmp_identical()
   ),
   inplace = TRUE
@@ -261,11 +259,8 @@ message("Linked dwellings: ", sum(linked_final$flag_dwelling_link,
 
 
 # Step 8: Save steady state
-
-
 write_rds(linked_final, "data/processed/linked_final.rds")
 
-
-message("Steady State 3 written to ")
+message("Steady State (linked data) written to data/processed/linked_final.rds")
 
 

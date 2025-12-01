@@ -1,43 +1,29 @@
 # 03_linked_to_output.R
 
-
 # Step 0 — Load linked input 
 
-
-linked_final <- read_rds("data/processed/linked_final.rds")
-
+linked_final         <- read_rds("data/processed/linked_final.rds")
 municipalities_input <- read_rds("data/processed/municipalities_input.rds")
 towns_input          <- read_rds("data/processed/towns_input.rds")
 
-
 # Step 1 — Prepare municipality lookup (latest per town_id)
-
 
 municipalities_clean <- municipalities_input |>
   arrange(id_town, desc(start_valid)) |>
   distinct(id_town, .keep_all = TRUE)
 
-
 # Step 2 — Add municipality info
 
 final <- linked_final |>
   left_join(
-    municipalities_clean 
-    |> select(id_town, id_municipality),
-    by = c("town_id" = "id_town")
+    municipalities_clean |> select(id_town, id_municipality),
+    by = "id_town"
   ) |>
   mutate(
     flag_municip_link = if_else(!is.na(id_municipality), 1L, 0L)
   )
 
-
-
 # Step 3 — Combined linkage success flag
-# A sale is "fully linked" if:
-#  1) address was found via probabilistic linkage
-#  2) dwelling was found
-#  3) municipality was found
-
 
 final <- final |>
   mutate(
@@ -47,9 +33,7 @@ final <- final |>
       flag_municip_link
   )
 
-
 # Step 4 — Standardise final variable names
-
 
 final <- final |>
   rename(
@@ -67,14 +51,8 @@ final <- final |>
     bag_house_add    = house_addition_bag,
     
     municipality_id  = id_municipality,
-    dwelling_id      = id_dwelling,
-    
-    usage_purpose    = usage_purpose,
-    area_m2          = area_m2,
-    x_coord          = x_coord,
-    y_coord          = y_coord
+    dwelling_id      = id_dwelling
   )
-
 
 # Step 5 — Select the final output structure
 
@@ -101,7 +79,7 @@ linked_dataset <- final |>
     bag_house_add,
     bag_postcode,
     bag_city,
-    town_id,
+    id_town,
     
     # Dwelling attributes
     usage_purpose,
@@ -117,6 +95,7 @@ linked_dataset <- final |>
     linkage_success
   )
 
+# Canonical final dataset
 
 final_dataset <- final |>
   mutate(
@@ -139,19 +118,19 @@ final_dataset <- final |>
     address_house_add,
     address_postcode,
     address_city,
-    town_id,
+    id_town,
     
-    # Original sales data (keep if needed)
+    # Sales
     sale_date,
     price_eur,
     
-    # Dwelling attributes
+    # Dwelling
     usage_purpose,
     area_m2,
     x_coord,
     y_coord,
     
-    # Linkage info
+    # Linkage flags
     linkage_weight,
     flag_address_prob,
     flag_dwelling_link,
@@ -159,11 +138,8 @@ final_dataset <- final |>
     linkage_success
   )
 
-
-
 # Step 6 — Save the final output
 
 write_rds(final_dataset, "data/processed/final_dataset.rds")
-
 
 message("SS4 successfully written to data/processed/final_dataset.rds")

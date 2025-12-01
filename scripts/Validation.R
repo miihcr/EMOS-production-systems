@@ -1,18 +1,31 @@
-install.packages("validate")
 
-library(validate)
-library(here)
+# in progress 
 
 
-data(SBS2000)
+# Load datasets
+addresses_input     <- read_rds("data/processed/addresses_input.rds")
+public_spaces_input <- read_rds("data/processed/public_spaces_input.rds")
+towns_input         <- read_rds("data/processed/towns_input.rds")
+municipalities_input<- read_rds("data/processed/municipalities_input.rds")
+buildings_input     <- read_rds("data/processed/buildings_input.rds")
+dwellings_input     <- read_rds("data/processed/dwellings_input.rds")
+sales_input         <- read_rds("data/processed/sales_input.rds")
 
-rules <- validate::validator(.file = "rules.R")
+# Load rules
+rules <- validate::validator(.file = "scripts/validation_rules.R")
 
-?validator
+# Validate each dataset
+out_addresses      <- confront(addresses_input, rules)
+out_public_spaces  <- confront(public_spaces_input, rules)
+out_towns          <- confront(towns_input, rules)
+out_municipalities <- confront(municipalities_input, rules)
+out_buildings      <- confront(buildings_input, rules)
+out_dwellings      <- confront(dwellings_input, rules)
+out_sales          <- confront(sales_input, rules)
 
 
-out <- validate::confront(SBS2000, rules, key = "id")
+summary(out_addresses)
 
-plot(out)
-
+summary(out_public_spaces)
+summary(out_towns)
 
