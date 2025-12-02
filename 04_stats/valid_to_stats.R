@@ -11,7 +11,7 @@ public_spaces  <- read_rds("03_valid/data/public_spaces_valid.rds")
 towns          <- read_rds("03_valid/data/towns_valid.rds")
 municipalities <- read_rds("03_valid/data/municipalities_valid.rds")
 buildings      <- read_rds("03_valid/data/buildings_valid.rds")
-sales          <- read_rds("02_input/data/sales_valid.rds")
+sales          <- read_rds("03_valid/data/sales_valid.rds")
 
 
 sales <- sales_input
