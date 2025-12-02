@@ -9,176 +9,163 @@ municipalities<- read_rds("data/cleaned/municipalities.rds")
 buildings    <- read_rds("data/cleaned/buildings.rds")
 
 
-# Dwellings
+# DWELLINGS
 
+# residential (10-400m2)
 
-# 1. Are dwelling IDs unique?
-dwellings |> 
-  count(id_dwelling) |> 
-  filter(n > 1)
+# business (20-2000m2)
 
-# 2. Any missing dwelling IDs?
-sum(is.na(dwellings$id_dwelling))
+# maximum dwelling <= 6000 m2
 
-# 3. Validity logic: end >= start OR end NA
-dwellings |> 
-  filter(!is.na(end_valid) & end_valid < start_valid)
-
-# 4. Coordinates must be numeric, not NA
-dwellings |> 
-  summarise(
-    missing_x = sum(is.na(x_coord)),
-    missing_y = sum(is.na(y_coord))
+dwellings <- dwellings |>
+  mutate(
+    # Fix area: missing-value codes
+    area_m2 = na_if(area_m2, 0),
+    area_m2 = na_if(area_m2, 1),
+    area_m2 = na_if(area_m2, 9999),
+    area_m2 = na_if(area_m2, 999999),
+    
+    # Replace impossible values
+    area_m2 = ifelse(
+      area_m2 < 10 | area_m2 > 6000, 
+      NA,
+      area_m2)
   )
-
-# 5. Valid usage_purpose values?
-table(dwellings$usage_purpose, useNA = "ifany")
-
-# 6. Valid status values?
-table(dwellings$dwelling_status, useNA = "ifany")
-
-table(dwellings$area_m2, useNA = "ifany")
-
-dwellings |> 
-  summarise(
-    min_area = min(area_m2, na.rm = TRUE),
-    max_area = max(area_m2, na.rm = TRUE)
-  )
-
-
 
 # BUILDINGS
 
-# 1. Unique building IDs
-buildings |> 
-  count(id_building) |> 
-  filter(n > 1)
+# years under 1965 and above 2026 should be NA
 
-# 2. Missing building IDs
-sum(is.na(buildings$id_building))
-
-# 3. Validity date logic
-buildings |> 
-  filter(!is.na(end_valid) & end_valid < start_valid)
-
-# 4. Coordinates sanity
-buildings |> 
-  summarise(
-    missing_x = sum(is.na(x_coord)),
-    missing_y = sum(is.na(y_coord))
+buildings <- buildings |>
+  mutate(
+    # Convert known missing-value codes to NA
+    construction_year = na_if(construction_year, 0),
+    construction_year = na_if(construction_year, 1),
+    construction_year = na_if(construction_year, 9999),
+    
+    # Remove historically impossible years
+    construction_year = ifelse(construction_year < 1800, NA, construction_year),
+    
+    # Remove future or unrealistic years
+    construction_year = ifelse(construction_year > 2026, NA, construction_year),
+    
+    # Apply your rule: keep only post-1965 data
+    construction_year = ifelse(construction_year < 1965, NA, construction_year)
   )
 
-# 5. Construction year reasonable?
-buildings |> summarise(
-  min_year = min(construction_year, na.rm = TRUE),
-  max_year = max(construction_year, na.rm = TRUE)
-)
-
-# 6. Building status values
-table(buildings$building_status, useNA = "ifany")
-
-
-# ADDRESSES
-
-# 1. Unique ID
-addresses |> 
-  count(id_address) |> 
-  filter(n > 1)
-
-# 2. Missing ID?
-sum(is.na(addresses$id_address))
-
-# 3. Validity period logic
-addresses |> 
-  filter(!is.na(end_valid) & end_valid < start_valid)
-
-# 4. Postcode format validation
-grep("^[0-9]{4}[A-Z]{2}$", addresses$postcode, invert = TRUE) |> length()
-
-# 5. House numbers positive integer?
-addresses |> filter(house_number <= 0)
-
-# 6. Public space ID missing?
-sum(is.na(addresses$id_public_space))
-
-
-# PUBLIC SPACES
-
-# 1. Unique ID
-public_spaces |> 
-  count(id_public_space) |> 
-  filter(n > 1)
-
-# 2. Missing ID?
-sum(is.na(public_spaces$id_public_space))
-
-# 3. Validity logic
-public_spaces |> 
-  filter(!is.na(end_valid) & end_valid < start_valid)
-
-# 4. Missing names?
-sum(is.na(public_spaces$public_space_name))
-
-# 5. Valid type values?
-table(public_spaces$public_space_type, useNA = "ifany")
-
-# 6. Town ID missing?
-sum(is.na(public_spaces$id_town))
-
-
-# TOWNS
-
-# 1. Unique IDs
-towns|> 
-  count(id_town) |> 
-  filter(n > 1)
-
-# 2. Missing IDs
-sum(is.na(towns$id_town))
-
-# 3. Validity logic
-towns |> 
-  filter(!is.na(end_valid) & end_valid < start_valid)
-
-# 4. Missing names?
-sum(is.na(towns$town_name))
-
-# 5. Valid status values?
-table(towns$town_status, useNA = "ifany")
-
-
-# MUNICIPALITIES
-
-# 1. Unique mapping per town
-municipalities |> 
-  count(id_town) |> 
-  filter(n > 1)
-
-# 2. Missing IDs
-summis <- municipalities |> 
+buildings |> 
   summarise(
-    missing_town = sum(is.na(id_town)),
-    missing_mun  = sum(is.na(id_municipality))
+    min_year = min(construction_year, na.rm = TRUE),
+    max_year = max(construction_year, na.rm = TRUE),
+    missing_years = sum(is.na(construction_year))
   )
 
-# 3. Validity logic
-municipalities |> 
-  filter(!is.na(end_valid) & end_valid < start_valid)
 
-# 4. Status values
-table(municipalities$municipality_status, useNA = "ifany")
+# SALES
 
+sales <- sales |> 
+  mutate(
+    town_name = town_name |> 
+      str_replace("\\s+[Nn][Bb]$", "")
+  )
 
-
-# Relationship validation
-
-sum(!dwellings$id_building %in% buildings$id_building)
+table(sales$town_name, useNA = "ifany")
 
 
-sum(!addresses$id_public_space %in% public_spaces$id_public_space)
+# Rename columns
+
+# Sales
+
+sales <- sales |> 
+  rename(
+    sales_full_address     = full_address,
+    sales_street_name      = street_name,
+    sales_house_number     = house_number,
+    sales_house_addition   = house_addition,
+    sales_postcode         = postcode,
+    sales_town_name        = town_name,
+  )
 
 
-sum(!public_spaces$id_town %in% towns$id_town)
+# Addresses
+addresses <- addresses |> 
+  rename(
+    addresses_id_address       = id_address,
+    addresses_id_public_space  = id_public_space,
+    addresses_postcode         = postcode,
+    addresses_house_number     = house_number,
+    addresses_house_addition   = house_addition,
+    addresses_start_valid      = start_valid,
+    addresses_end_valid        = end_valid
+  )
 
 
-sum(!towns$id_town %in% municipalities$id_town)
+# Dwellings
+dwellings <- dwellings |>
+  rename(
+    dwellings_id_dwelling    = id_dwelling,
+    dwellings_usage_purpose  = usage_purpose,
+    dwellings_area_m2        = area_m2,
+    dwellings_status         = dwelling_status,
+    dwellings_id_address     = id_address,
+    dwellings_id_building    = id_building,
+    dwellings_start_valid    = start_valid,
+    dwellings_end_valid      = end_valid,
+    dwellings_x_coord        = x_coord,
+    dwellings_y_coord        = y_coord
+  )
+
+
+# Buildings
+
+buildings <- buildings |>
+  rename(
+    buildings_id_building         = id_building,
+    buildings_construction_year   = construction_year,
+    buildings_status              = building_status,
+    buildings_start_valid         = start_valid,
+    buildings_end_valid           = end_valid,
+    buildings_x_coord             = x_coord,
+    buildings_y_coord             = y_coord
+  )
+
+
+# Public spaces
+public_spaces <- public_spaces |>
+  rename(
+    public_spaces_id_public_space   = id_public_space,
+    public_spaces_name              = public_space_name,
+    public_spaces_type              = public_space_type,
+    public_spaces_id_town           = id_town,
+    public_spaces_start_valid       = start_valid,
+    public_spaces_end_valid         = end_valid
+  )
+
+
+# Towns
+
+towns <- towns |>
+  rename(
+    towns_id_town           = id_town,
+    towns_name              = town_name,
+    towns_status            = town_status,
+    towns_start_valid       = start_valid,
+    towns_end_valid         = end_valid,
+    towns_x_coord           = x_coord,
+    towns_y_coord           = y_coord
+  )
+
+
+# Municipalities
+
+municipalities <- municipalities |>
+  rename(
+    municipalities_id_town           = id_town,
+    municipalities_id_municipality   = id_municipality,
+    municipalities_status            = municipality_status,
+    municipalities_start_valid       = start_valid,
+    municipalities_end_valid         = end_valid
+  )
+
+
+
