@@ -105,26 +105,3 @@ stats_out <- sales_denbosch_2024 |>
 
 stats_out
 
-
-# LINK PUBLIC SPACES -> TOWNS -> MUNICIPALITIES
-
-sales_full <- sales_addr_latest |>
-  
-  # link public spaces
-  left_join(
-    public_spaces_latest,
-    by = join_by(addresses_id_public_space == public_spaces_id_public_space)
-  ) |>
-  
-  # link towns
-  left_join(
-    towns_latest,
-    by = join_by(public_spaces_id_town == towns_id_town)
-  ) |>
-  
-  # link municipalities
-  left_join(
-    municipalities_latest,
-    by = join_by(public_spaces_id_town == municipalities_id_town)
-  )
-
