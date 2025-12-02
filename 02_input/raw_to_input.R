@@ -26,19 +26,29 @@ sales_raw          <- read_rds("01_raw/data/sales_raw.rds")
 
 addresses_input <- addresses_raw |>
   mutate(
-    id_address                 = id,
-    addresses_postcode         = postcode |> str_squish() |> str_to_upper(),
-    addresses_house_number     = huisnummer,
-    addresses_house_addition   = huisnummertoevoeging |> str_squish() |> str_to_upper(),
-    addresses_id_public_space  = openbareruimte,
-    addresses_start_valid      = ymd(begin_geldigheid),
-    addresses_end_valid        = ymd(eind_geldigheid)
+    id_address = id,
+    addresses_postcode = postcode |>
+      str_squish() |>
+      str_to_upper() |>
+      str_remove_all("\\s+"),  # -> "1234AB"
+    addresses_house_number   = huisnummer,
+    addresses_house_addition = huisnummertoevoeging |>
+      str_squish() |>
+      str_to_upper()
+  ) |>
+  mutate(
+    addresses_house_addition = na_if(addresses_house_addition, "")
+  ) |>
+  mutate(
+    addresses_id_public_space = openbareruimte,
+    addresses_start_valid     = ymd(begin_geldigheid),
+    addresses_end_valid       = ymd(eind_geldigheid)
   ) |>
   select(
     id_address, addresses_postcode, addresses_house_number,
     addresses_house_addition, addresses_id_public_space,
     addresses_start_valid, addresses_end_valid
-  ) |> 
+  ) |>
   distinct() # remove exact duplicates
 
 write_csv(addresses_input, "02_input/data/addresses_input.csv")
@@ -179,14 +189,19 @@ write_rds(buildings_input, "02_input/data/buildings_input.rds")
 
 sales_input <- sales_raw |>
   mutate(
-    sales_full_address  = address,
-    sales_postcode      = postcode |> str_squish() |> str_to_upper(),
-    sales_town_name     = city |> str_squish(),
-    sales_price         = as.numeric(sales_price),
-    sale_date           = ymd(sale_date)
-  ) |> 
-  select(sales_full_address, sales_postcode, sales_town_name,
-         sales_price, sale_date) |> 
+    sales_full_address = address,
+    sales_postcode     = postcode |>
+      str_squish() |>
+      str_to_upper() |>
+      str_remove_all("\\s+"),   # -> "1234AB"
+    sales_town_name    = city |> str_squish(),
+    sales_price        = as.numeric(sales_price),
+    sale_date          = ymd(sale_date)
+  ) |>
+  select(
+    sales_full_address, sales_postcode, sales_town_name,
+    sales_price, sale_date
+  ) |>
   extract(
     col   = sales_full_address,
     into  = c("sales_street_name", "sales_house_number", "sales_house_addition"),
@@ -196,7 +211,8 @@ sales_input <- sales_raw |>
   mutate(
     sales_street_name    = str_to_lower(str_squish(sales_street_name)),
     sales_house_number   = as.integer(sales_house_number),
-    sales_house_addition = str_to_upper(str_squish(sales_house_addition))
+    sales_house_addition = str_to_upper(str_squish(sales_house_addition)),
+    sales_house_addition = na_if(sales_house_addition, "")
   ) |>
   select(
     sales_full_address, sales_street_name, sales_house_number,
@@ -207,10 +223,4 @@ sales_input <- sales_raw |>
 write_csv(sales_input, "02_input/data/sales_input.csv")
 write_rds(sales_input, "02_input/data/sales_input.rds")
 
-
-# ------------------------------------------------------------
-# DONE
-# ------------------------------------------------------------
 message("02_input stage completed ✓ — cleaned input files created.")
-
-

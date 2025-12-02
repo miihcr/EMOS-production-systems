@@ -196,36 +196,37 @@ table(municipalities$municipality_status, useNA = "ifany")
 # 1. check for duplicate sale records 
 
 sales |> 
-  count(sales_full_address, sale_date, sales_price) |>
+  count(full_address, sale_date, price) |>
   filter(n > 1)
+
 
 # 2. Missing important fields
 sales |> summarise(
-  missing_street   = sum(is.na(sales_street_name)),
-  missing_number   = sum(is.na(sales_house_number)),
-  missing_postcode = sum(is.na(sales_postcode)),
+  missing_street   = sum(is.na(street_name)),
+  missing_number   = sum(is.na(house_number)),
+  missing_postcode = sum(is.na(postcode)),
   missing_date     = sum(is.na(sale_date)),
-  missing_price    = sum(is.na(sales_price))
+  missing_price    = sum(is.na(price))
 )
 
 # 3. House number must be numeric
-sales |> filter(!str_detect(sales_house_number, "^[0-9]+$"))
+sales |> filter(!str_detect(house_number, "^[0-9]+$"))
 
 # Convert to integer after validation
-sales <- sales |> mutate(sales_house_number = 
-                           as.integer(sales_house_number))
+sales <- sales |> mutate(house_number = 
+                           as.integer(house_number))
 
 # 4. Postcode format must match BAG (4 digits + 2 uppercase letters)
 invalid_postcodes <- sales |> 
-  filter(!str_detect(sales_postcode, "^[0-9]{4}[A-Z]{2}$"))
+  filter(!str_detect(postcode, "^[0-9]{4}[A-Z]{2}$"))
 
 nrow(invalid_postcodes)
 
 # 5. House addition should be clean 
-table(sales$sales_house_addition, useNA = "ifany")
+table(sales$house_addition, useNA = "ifany")
 
 # 6. Sale price must be positive
-sales |> filter(sales_price <= 0)
+sales |> filter(price <= 0)
 
 # 7. Sale date must be in 2024 
 sales |> summarise(
@@ -235,26 +236,26 @@ sales |> summarise(
 
 
 # 8. Validate town names
-table(sales$sales_town_name, useNA = "ifany")
+table(sales$town_name, useNA = "ifany")
 
 # Compare with BAG towns
-setdiff(unique(sales$sales_town_name), unique(towns$towns_name))
+setdiff(unique(sales$town_name), unique(towns$towns_name))
 
 # 9. Validate street name casing / excessive whitespace
 sales |> 
   summarise(
-    whitespace_street = sum(str_detect(sales_street_name, "^\\s|\\s$")),
-    lowercase_street  = sum(sales_street_name == tolower(sales_street_name))
+    whitespace_street = sum(str_detect(street_name, "^\\s|\\s$")),
+    lowercase_street  = sum(street_name == tolower(street_name))
   )
 
 # 10. Outlier detection (optional for production systems)
 sales |> 
   summarise(
-    q1 = quantile(sales_price, 0.25),
-    q3 = quantile(sales_price, 0.75),
-    iqr = IQR(sales_price),
-    max_price = max(sales_price),
-    min_price = min(sales_price)
+    q1 = quantile(price, 0.25),
+    q3 = quantile(price, 0.75),
+    iqr = IQR(price),
+    max_price = max(price),
+    min_price = min(price)
   )
 
 

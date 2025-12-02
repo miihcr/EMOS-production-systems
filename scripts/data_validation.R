@@ -66,7 +66,8 @@ buildings |>
 sales <- sales |> 
   mutate(
     town_name = town_name |> 
-      str_replace("\\s+[Nn][Bb]$", "")
+      str_replace("\\s+[Nn][Bb]$", ""),
+    house_number = as.integer(house_number)
   )
 
 table(sales$town_name, useNA = "ifany")

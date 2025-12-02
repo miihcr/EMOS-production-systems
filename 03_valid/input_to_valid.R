@@ -19,17 +19,18 @@ sales          <- read_rds("02_input/data/sales_input.rds")
 
 addresses_valid <- addresses |>
   mutate(
-    addresses_postcode = if_else(
+    addresses_postcode = ifelse(
       str_detect(addresses_postcode, "^[0-9]{4}[A-Z]{2}$"),
       addresses_postcode,
       NA_character_
     ),
-    addresses_house_number = if_else(
-      addresses_house_number > 0,
+    addresses_house_number = ifelse(
+      !is.na(addresses_house_number) & addresses_house_number > 0,
       addresses_house_number,
       NA_integer_
     )
   )
+
 
 write_rds(addresses_valid, "03_valid/data/addresses_valid.rds")
 
@@ -41,8 +42,8 @@ dwellings_valid <- dwellings |>
     dwellings_area_m2 = na_if(dwellings_area_m2, 0),
     dwellings_area_m2 = na_if(dwellings_area_m2, 1),
     dwellings_area_m2 = na_if(dwellings_area_m2, 9999),
-    dwellings_area_m2 = if_else(
-      dwellings_area_m2 < 10 | dwellings_area_m2 > 6000,
+    dwellings_area_m2 = ifelse(
+      !is.na(dwellings_area_m2) & (dwellings_area_m2 < 10 | dwellings_area_m2 > 6000),
       NA_integer_,
       dwellings_area_m2
     ),
@@ -53,13 +54,8 @@ dwellings_valid <- dwellings |>
       str_squish() |>
       str_to_lower()
   ) |>
-  # Keep only residential use
-  filter(dwellings_usage_purpose == "woonfunctie") # |>
-  # Keep only real and in-use dwellings
-  # filter(dwellings_status %in% c(
-  #   "verblijfsobject in gebruik",
-   #  "verblijfsobject in gebruik (niet ingemeten)"
-  # ))
+  # Keep only residential use (woonfunctie)
+  filter(dwellings_usage_purpose == "woonfunctie")
 
 write_rds(dwellings_valid, "03_valid/data/dwellings_valid.rds")
 
@@ -70,13 +66,13 @@ buildings_valid <- buildings |>
     buildings_construction_year = na_if(buildings_construction_year, 0),
     buildings_construction_year = na_if(buildings_construction_year, 1),
     buildings_construction_year = na_if(buildings_construction_year, 9999),
-    buildings_construction_year = if_else(
-      buildings_construction_year < 1800,
+    buildings_construction_year = ifelse(
+      !is.na(buildings_construction_year) & buildings_construction_year < 1800,
       NA_integer_,
       buildings_construction_year
     ),
-    buildings_construction_year = if_else(
-      buildings_construction_year > 2026,
+    buildings_construction_year = ifelse(
+      !is.na(buildings_construction_year) & buildings_construction_year > 2026,
       NA_integer_,
       buildings_construction_year
     )
@@ -119,59 +115,57 @@ write_rds(municipalities_valid, "03_valid/data/municipalities_valid.rds")
 
 
 # 8. VALIDATE SALES
+#   - Standardize prices to euros
+#   - Keep only valid 2024 sales
+#   - Postcodes already "1234AB"
 
-# Standardize prices - convert everything to whole euros
+
 sales_validation_flags <- sales |>
   mutate(
-    # Determine unit and convert ALL to whole euros
+    # Convert to whole euros
     sales_price_euros = case_when(
-      sales_price >= 10000 ~ sales_price,           # Already in whole euros
-      sales_price >= 100 ~ sales_price * 1000,      # In k€, convert to euros
-      TRUE ~ NA_real_                                # Suspiciously low, flag as invalid
+      sales_price >= 10000 ~ as.numeric(sales_price),      # already euros
+      sales_price >= 100   ~ as.numeric(sales_price) * 1000, # in k€
+      TRUE                 ~ NA_real_                       # suspiciously low
     ),
-    
-    # Also keep k€ version for reference
     sales_price_k = sales_price_euros / 1000,
     
-    # Clean postcode (remove any spaces)
-    sales_postcode_clean = str_remove_all(sales_postcode, "\\s+"),
+    # Postcodes already normalized, but ensure no whitespace
+    sales_postcode_clean = sales_postcode |>
+      str_squish() |>
+      str_to_upper() |>
+      str_remove_all("\\s+"),
     
     # Validation flags
-    flag_missing_postcode = is.na(sales_postcode),
-    flag_invalid_postcode_format = !is.na(sales_postcode_clean) & 
+    flag_missing_postcode        = is.na(sales_postcode_clean),
+    flag_invalid_postcode_format = !is.na(sales_postcode_clean) &
       !str_detect(sales_postcode_clean, "^[0-9]{4}[A-Z]{2}$"),
-    flag_invalid_house_number = is.na(sales_house_number) | sales_house_number <= 0,
-    flag_invalid_price = is.na(sales_price_euros) | sales_price_euros <= 0,
-    flag_suspicious_low = !is.na(sales_price) & sales_price < 100,  # < 100k seems wrong
-    flag_invalid_date = is.na(sale_date) | year(sale_date) != 2024,
+    flag_invalid_house_number    = is.na(sales_house_number) | sales_house_number <= 0,
+    flag_invalid_price           = is.na(sales_price_euros) | sales_price_euros <= 0,
+    flag_suspicious_low          = !is.na(sales_price) & sales_price < 100,  # <100 k€
+    flag_invalid_date            = is.na(sale_date) | year(sale_date) != 2024,
     
-    # Combined flag for hard errors
-    flag_any_error = flag_missing_postcode | flag_invalid_postcode_format | 
-      flag_invalid_house_number | flag_invalid_price | flag_invalid_date
+    flag_any_error = flag_missing_postcode |
+      flag_invalid_postcode_format |
+      flag_invalid_house_number |
+      flag_invalid_price |
+      flag_invalid_date
   )
 
-# Check the standardization worked
 
-sample_check <- sales_validation_flags |>
-  filter(!flag_any_error) |>
-  select(sales_full_address, original = sales_price, 
-         standardized_euros = sales_price_euros, standardized_k = sales_price_k) |>
-  slice_sample(n = 10)
-print(sample_check)
-
-# Final valid dataset - USE EUROS as standard
+# Final valid dataset (2024, in euros)
 sales_valid <- sales_validation_flags |>
   filter(!flag_any_error) |>
   select(
     sales_full_address, sales_street_name, sales_house_number,
-    sales_house_addition, sales_postcode = sales_postcode_clean,
-    sales_town_name, 
-    sales_price_euros,  # Standardized in whole euros
+    sales_house_addition,
+    sales_postcode = sales_postcode_clean,
+    sales_town_name,
+    sales_price_euros,
     sale_date
   )
 
 write_rds(sales_valid, "03_valid/data/sales_valid.rds")
-
 
 message("03_valid stage completed ✓ — validated datasets created.")
 
