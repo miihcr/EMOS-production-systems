@@ -182,10 +182,7 @@ sales_input <- sales_raw |>
     sales_full_address  = address,
     sales_postcode      = postcode |> str_squish() |> str_to_upper(),
     sales_town_name     = city |> str_squish(),
-    sales_price_raw     = as.numeric(sales_price),
-    sales_price         = if_else(sales_price_raw < 2000,
-                                sales_price_raw * 1000,
-                                sales_price_raw),
+    sales_price         = as.numeric(sales_price),
     sale_date           = ymd(sale_date)
   ) |> 
   select(sales_full_address, sales_postcode, sales_town_name,

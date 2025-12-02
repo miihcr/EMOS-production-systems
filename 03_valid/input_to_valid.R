@@ -53,12 +53,12 @@ dwellings_valid <- dwellings |>
       str_to_lower()
   ) |>
   # Keep only residential use
-  filter(dwellings_usage_purpose == "woonfunctie") |>
+  filter(dwellings_usage_purpose == "woonfunctie") # |>
   # Keep only real and in-use dwellings
-  filter(dwellings_status %in% c(
-    "verblijfsobject in gebruik",
-    "verblijfsobject in gebruik (niet ingemeten)"
-  ))
+  # filter(dwellings_status %in% c(
+  #   "verblijfsobject in gebruik",
+   #  "verblijfsobject in gebruik (niet ingemeten)"
+  # ))
 
 write_rds(dwellings_valid, "03_valid/data/dwellings_valid.rds")
 
@@ -122,29 +122,6 @@ municipalities_valid <- municipalities |>
 
 write_rds(municipalities_valid, "03_valid/data/municipalities_valid.rds")
 
-# 8. VALIDATE SALES
-
-sales_valid <- sales |>
-  mutate(
-    sales_postcode = if_else(
-      str_detect(sales_postcode, "^[0-9]{4}[A-Z]{2}$"),
-      sales_postcode,
-      NA_character_
-    ),
-    sales_house_number = if_else(
-      sales_house_number > 0,
-      sales_house_number,
-      NA_integer_
-    ),
-    sales_price = if_else(
-      sales_price <= 0,
-      NA_real_,
-      sales_price
-    ),
-    sale_date = ymd(sale_date)
-  )
-
-write_rds(sales_valid, "03_valid/data/sales_valid.rds")
 
 message("03_valid stage completed ✓ — validated datasets created.")
 
