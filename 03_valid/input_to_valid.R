@@ -79,12 +79,6 @@ buildings_valid <- buildings |>
       buildings_construction_year > 2026,
       NA_integer_,
       buildings_construction_year
-    ),
-    # drop very old buildings prior to 1965
-    buildings_construction_year = if_else(
-      buildings_construction_year < 1965,
-      NA_integer_,
-      buildings_construction_year
     )
   )
 
