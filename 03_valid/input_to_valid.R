@@ -14,6 +14,7 @@ municipalities <- read_rds("02_input/data/municipalities_input.rds")
 buildings      <- read_rds("02_input/data/buildings_input.rds")
 sales          <- read_rds("02_input/data/sales_input.rds")
 
+
 # 2. VALIDATE ADDRESSES
 
 addresses_valid <- addresses |>
