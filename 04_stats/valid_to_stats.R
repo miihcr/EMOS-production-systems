@@ -13,27 +13,42 @@ municipalities <- read_rds("03_valid/data/municipalities_valid.rds")
 buildings      <- read_rds("03_valid/data/buildings_valid.rds")
 sales          <- read_rds("03_valid/data/sales_valid.rds")
 
-# 2. STANDARDIZE TEXT FOR MERGING
+# Add far-future end date for open intervals
+fut <- ymd("9999-12-31")
+
+addresses <- addresses |>
+  mutate(addresses_end_valid = replace_na(addresses_end_valid, fut))
+
+dwellings <- dwellings |>
+  mutate(dwellings_end_valid = replace_na(dwellings_end_valid, fut))
 
 public_spaces <- public_spaces |>
   mutate(
-    public_spaces_name = public_spaces_name |> str_squish() |> str_to_lower()
-  )
-
-sales <- sales |>
-  mutate(
-    sales_street_name = sales_street_name |> str_squish() |> str_to_lower(),
-    
-    # Harmonise Den Bosch naming
-    sales_town_name = sales_town_name |>
-      str_squish() |>
-      str_replace("\\s+[Nn][Bb]$", "") |>
-      str_replace("^Den ?Bosch$", "'s-Hertogenbosch")
+    public_spaces_end_valid = replace_na(public_spaces_end_valid, fut),
+    public_spaces_name      = public_spaces_name |> str_squish() |> str_to_lower()
   )
 
 towns <- towns |>
   mutate(
-    towns_name = towns_name |> str_squish()
+    towns_name     = towns_name |> str_squish(),
+    towns_end_valid = replace_na(towns_end_valid, fut)
+  )
+
+municipalities <- municipalities |>
+  mutate(
+    municipalities_end_valid = replace_na(municipalities_end_valid, fut)
+  )
+
+# Standardize sales text fields
+
+sales <- sales |>
+  mutate(
+    sales_street_name = sales_street_name |> str_squish() |> str_to_lower(),
+    # Harmonise Den Bosch naming in source sales data (if used)
+    sales_town_name = sales_town_name |>
+      str_squish() |>
+      str_replace("\\s+[Nn][Bb]$", "") |>
+      str_replace("^Den ?Bosch$", "'s-Hertogenbosch")
   )
 
 # 3. LINK SALES TO ADDRESSES USING POSTCODE + HOUSE NUMBER
@@ -47,6 +62,30 @@ sales_addr <- sales |>
     ),
     relationship = "many-to-many"
   )
+
+sales_addr <- sales |>
+  left_join(
+    addresses,
+    join_by(
+      sales_postcode      == addresses_postcode,
+      sales_house_number  == addresses_house_number,
+      sales_house_addition == addresses_house_addition
+    ),
+    relationship = "many-to-many"
+  ) |>
+  # Apply temporal validity for address
+  filter(
+    !is.na(id_address),
+    sale_date >= addresses_start_valid,
+    sale_date <  addresses_end_valid
+  ) |>
+  # If multiple possible address records remain, choose the one
+  # with most recent start_valid before sale_date
+  group_by(sales_full_address, sale_date, sales_price) |>
+  slice_max(order_by = addresses_start_valid, n = 1, with_ties = FALSE) |>
+  ungroup()
+
+
 
 # 4. CHOOSE LATEST BAG VALIDITY RECORD PER SALE
 

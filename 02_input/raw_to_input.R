@@ -1,8 +1,10 @@
 # 02_input/raw_to_input.R 
+
 # Convert RAW to INPUT
 
 # Create folder if needed
 dir.create("02_input/data", showWarnings = FALSE, recursive = TRUE)
+
 
 # 1. LOAD RAW FILES ALREADY WITH CORRECT DATA TYPES
 
@@ -36,11 +38,8 @@ addresses_input <- addresses_raw |>
     id_address, addresses_postcode, addresses_house_number,
     addresses_house_addition, addresses_id_public_space,
     addresses_start_valid, addresses_end_valid
-  ) |>
-  distinct() |>
-  group_by(id_address) |>
-  slice_max(order_by = addresses_start_valid, n = 1, with_ties = FALSE) |>
-  ungroup()
+  ) |> 
+  distinct() # remove exact duplicates
 
 write_csv(addresses_input, "02_input/data/addresses_input.csv")
 write_rds(addresses_input,  "02_input/data/addresses_input.rds")
@@ -61,11 +60,9 @@ public_spaces_input <- public_spaces_raw |>
   select(
     public_spaces_id_public_space, public_spaces_name, public_spaces_type,
     public_spaces_id_town, public_spaces_start_valid, public_spaces_end_valid
-  ) |>
-  distinct() |>
-  group_by(public_spaces_id_public_space) |>
-  slice_max(order_by = public_spaces_start_valid, n = 1, with_ties = FALSE) |>
-  ungroup()
+  ) |> 
+  distinct() # remove exact duplicates
+
 
 write_csv(public_spaces_input, "02_input/data/public_spaces_input.csv")
 write_rds(public_spaces_input,  "02_input/data/public_spaces_input.rds")
@@ -90,11 +87,9 @@ dwellings_input <- dwellings_raw |>
     dwellings_id_dwelling, dwellings_usage_purpose, dwellings_area_m2,
     dwellings_status, dwellings_id_address, dwellings_id_building,
     dwellings_start_valid, dwellings_end_valid, dwellings_x_coord, dwellings_y_coord
-  ) |>
-  distinct() |>
-  group_by(dwellings_id_dwelling) |>
-  slice_max(order_by = dwellings_start_valid, n = 1, with_ties = FALSE) |>
-  ungroup()
+  ) |> 
+  distinct() # remove exact duplicates
+
 
 write_csv(dwellings_input, "02_input/data/dwellings_input.csv")
 write_rds(dwellings_input, "02_input/data/dwellings_input.rds")
@@ -124,11 +119,8 @@ towns_input <- towns_raw |>
     towns_id_town, towns_name, towns_status,
     towns_start_valid, towns_end_valid,
     towns_x_coord, towns_y_coord
-  ) |>
-  distinct() |>
-  group_by(towns_id_town) |>
-  slice_max(order_by = towns_start_valid, n = 1, with_ties = FALSE) |>
-  ungroup()
+  ) |> 
+  distinct() # remove exact duplicates
 
 write_csv(towns_input, "02_input/data/towns_input.csv")
 write_rds(towns_input, "02_input/data/towns_input.rds")
@@ -151,11 +143,8 @@ municipalities_input <- municipalities_raw |>
     municipalities_status,
     municipalities_start_valid,
     municipalities_end_valid
-  ) |>
-  distinct() |>
-  group_by(municipalities_id_town) |>
-  slice_max(order_by = municipalities_start_valid, n = 1, with_ties = FALSE) |>
-  ungroup()
+  ) |> 
+  distinct() # remove exact duplicates
 
 write_csv(municipalities_input, "02_input/data/municipalities_input.csv")
 write_rds(municipalities_input, "02_input/data/municipalities_input.rds")
@@ -178,11 +167,8 @@ buildings_input <- buildings_raw |>
     buildings_id_building, buildings_construction_year, buildings_status,
     buildings_start_valid, buildings_end_valid,
     buildings_x_coord, buildings_y_coord
-  ) |>
-  distinct() |>
-  group_by(buildings_id_building) |>
-  slice_max(order_by = buildings_start_valid, n = 1, with_ties = FALSE) |>
-  ungroup()
+  )  |> 
+  distinct() # remove exact duplicates
 
 write_csv(buildings_input, "02_input/data/buildings_input.csv")
 write_rds(buildings_input, "02_input/data/buildings_input.rds")
@@ -220,6 +206,7 @@ sales_input <- sales_raw |>
 
 write_csv(sales_input, "02_input/data/sales_input.csv")
 write_rds(sales_input, "02_input/data/sales_input.rds")
+
 
 # ------------------------------------------------------------
 # DONE

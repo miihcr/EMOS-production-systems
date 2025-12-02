@@ -1,4 +1,4 @@
-# 03_valid/input_to_valid
+# 03_valid/unique_to_valid
 
 # Create if needed
 
@@ -45,11 +45,20 @@ dwellings_valid <- dwellings |>
       NA_integer_,
       dwellings_area_m2
     ),
-    dwellings_usage_purpose = dwellings_usage_purpose |> 
-      str_squish() |> 
+    dwellings_usage_purpose = dwellings_usage_purpose |>
+      str_squish() |>
+      str_to_lower(),
+    dwellings_status = dwellings_status |>
+      str_squish() |>
       str_to_lower()
   ) |>
-  filter(dwellings_usage_purpose == "woonfunctie")
+  # Keep only residential use
+  filter(dwellings_usage_purpose == "woonfunctie") |>
+  # Keep only real and in-use dwellings
+  filter(dwellings_status %in% c(
+    "verblijfsobject in gebruik",
+    "verblijfsobject in gebruik (niet ingemeten)"
+  ))
 
 write_rds(dwellings_valid, "03_valid/data/dwellings_valid.rds")
 
@@ -60,9 +69,22 @@ buildings_valid <- buildings |>
     buildings_construction_year = na_if(buildings_construction_year, 0),
     buildings_construction_year = na_if(buildings_construction_year, 1),
     buildings_construction_year = na_if(buildings_construction_year, 9999),
-    buildings_construction_year = if_else(buildings_construction_year < 1800, NA_integer_, buildings_construction_year),
-    buildings_construction_year = if_else(buildings_construction_year > 2026, NA_integer_, buildings_construction_year),
-    buildings_construction_year = if_else(buildings_construction_year < 1965, NA_integer_, buildings_construction_year)
+    buildings_construction_year = if_else(
+      buildings_construction_year < 1800,
+      NA_integer_,
+      buildings_construction_year
+    ),
+    buildings_construction_year = if_else(
+      buildings_construction_year > 2026,
+      NA_integer_,
+      buildings_construction_year
+    ),
+    # drop very old buildings prior to 1965
+    buildings_construction_year = if_else(
+      buildings_construction_year < 1965,
+      NA_integer_,
+      buildings_construction_year
+    )
   )
 
 write_rds(buildings_valid, "03_valid/data/buildings_valid.rds")
@@ -80,31 +102,27 @@ write_rds(public_spaces_valid, "03_valid/data/public_spaces_valid.rds")
 
 # 6. VALIDATE TOWNS
 
-
 towns_valid <- towns |>
   mutate(
-    towns_name = towns_name |> str_squish(),
+    towns_name   = towns_name   |> str_squish(),
     towns_status = towns_status |> str_squish() |> str_to_lower()
   )
 
 write_rds(towns_valid, "03_valid/data/towns_valid.rds")
-
 
 # 7. VALIDATE MUNICIPALITIES
 
 
 municipalities_valid <- municipalities |>
   mutate(
-    municipalities_status = municipalities_status |> 
-      str_squish() |> 
+    municipalities_status = municipalities_status |>
+      str_squish() |>
       str_to_lower()
   )
 
 write_rds(municipalities_valid, "03_valid/data/municipalities_valid.rds")
 
-
 # 8. VALIDATE SALES
-
 
 sales_valid <- sales |>
   mutate(
@@ -129,3 +147,5 @@ sales_valid <- sales |>
 write_rds(sales_valid, "03_valid/data/sales_valid.rds")
 
 message("03_valid stage completed ✓ — validated datasets created.")
+
+
