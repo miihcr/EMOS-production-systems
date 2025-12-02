@@ -35,7 +35,7 @@ sales_addr_latest <- sales_addr |>
   group_by(
     sales_full_address,
     sale_date,
-    sales_price,
+    sales_price_euros,
     sales_postcode,
     sales_house_number,
     sales_house_addition
@@ -109,18 +109,9 @@ sales_den_bosch_2024 |>
   group_by(towns_name) |>
   summarise(
     n_sales      = n(),
-    avg_price    = mean(sales_price, na.rm = TRUE),
-    median_price = median(sales_price, na.rm = TRUE),
+    avg_price    = mean(sales_price_euros, na.rm = TRUE),
+    median_price = median(sales_price_euros, na.rm = TRUE),
     .groups = "drop"
   ) |>
   arrange(towns_name)
 
-
-group_by(towns_name) |>
-  summarise(
-    n_sales      = n(),
-    avg_price    = mean(sales_price, na.rm = TRUE),
-    median_price = median(sales_price, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
-  arrange(towns_name)
