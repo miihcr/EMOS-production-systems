@@ -176,14 +176,55 @@ stats_out
 
 # Disclosure control (still needs to be modified)
 
+threshold <- 10
 
-stats_out <- stats_out |>
-  mutate(
-    avg_price    = ifelse(n_sales < 5, NA_real_, avg_price),
-    median_price = ifelse(n_sales < 5, NA_real_, median_price)
-  )
 
-print(stats_out)
+# We first need to identify which cell is safe to absorb the values under the threshold
+receiver <- stats_out |>
+  filter(n_sales >= threshold) |>
+  slice_max(n_sales, 
+            n = 1,
+            with_ties = FALSE) |>
+  pull(towns_name)
+
+# We now detect the towns under the threshold
+
+absorbed_towns <- stats_out |>
+  filter(n_sales < threshold) |>
+  pull(towns_name)
+
+# We combine the names of the towns (absorbed and the one that abosrbs)
+
+if (length(absorbed_towns) > 0) {
+  combined_name <- paste0(receiver, " and ", paste(absorbed_towns, 
+                                                   collapse = ", "))
+} else {
+  combined_name <- receiver
+}
+
+# We now aggregate the towns' totals
+small_totals <- stats_out |>
+  filter(n_sales < threshold)|>
+  summarise(extra_n = sum(n_sales, na.rm = TRUE),
+            extra_value = sum(n_sales * avg_price, na.rm = TRUE))
+
+# We create the new table
+stats_out_protected <- stats_out |>
+  filter(n_sales >= threshold) |> 
+  mutate(total_value = n_sales*avg_price) |>
+  mutate(n_sales = if_else(towns_name == receiver,
+                           n_sales + small_totals$extra_n,
+                           n_sales),
+         total_value = if_else(towns_name == receiver,
+                               total_value + small_totals$extra_value,
+                               total_value),
+         avg_price = total_value / n_sales,
+         towns_name = if_else(towns_name == receiver,
+                              combined_name,
+                              towns_name)) |>
+  select(-total_value)
+
+stats_out_protected
 
 # only save when we know it is correct
 
@@ -191,5 +232,3 @@ print(stats_out)
 # write_rds(stats_out, "04_stats/data/denbosch_woonplaats_stats_2024.rds")
 
 # message("04_stats stage completed ✓ — corrected statistics created.")
-
-

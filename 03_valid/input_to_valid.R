@@ -149,53 +149,82 @@ write_rds(municipalities_valid, "03_valid/data/municipalities_valid.rds")
 #   - Keep only valid 2024 sales
 #   - Postcodes already "1234AB"
 
-
-sales_validation_flags <- sales |>
+sales_validation_flags <- sales |> 
   mutate(
-
+    
+    # --- PRICE CLEANING ---
+    sales_price_raw = as.numeric(sales_price),
+    
     sales_price_euros = case_when(
-      sales_price >= 10000 & sales_price < 5e6  ~ sales_price,         # already euros
-      sales_price >= 100   & sales_price < 5000 ~ sales_price * 1000,  # in k€
+      # Normal market: stored in k€
+      sales_price_raw >= 100 & sales_price_raw <= 5000  ~ sales_price_raw * 1000,
+      
+      # Rare values already in €
+      sales_price_raw >= 100000 & sales_price_raw <= 5e6 ~ sales_price_raw,
+      
       TRUE ~ NA_real_
     ),
     
-    # keep k€ version for inspection
     sales_price_k = sales_price_euros / 1000,
     
-    # ✅ Clean postcode
+    
+    # --- POSTCODE CLEANING ---
     sales_postcode_clean = sales_postcode |>
       str_squish() |>
       str_to_upper() |>
       str_remove_all("\\s+"),
     
-    # ✅ Validation flags
-    flag_missing_postcode         = is.na(sales_postcode_clean),
-    flag_invalid_postcode_format = !is.na(sales_postcode_clean) &
-      !str_detect(sales_postcode_clean, "^[0-9]{4}[A-Z]{2}$"),
-    flag_invalid_house_number    = is.na(sales_house_number) | sales_house_number <= 0,
-    flag_invalid_price           = is.na(sales_price_euros) | sales_price_euros <= 0,
-    flag_suspicious_low          = !is.na(sales_price) & sales_price < 100,  # <100 k€
-    flag_invalid_date            = is.na(sale_date) | year(sale_date) != 2024,
     
-    flag_any_error = flag_missing_postcode |
+    # --- VALIDATION FLAGS ---
+    
+    # truly missing if empty OR NA
+    flag_missing_postcode = is.na(sales_postcode_clean) | sales_postcode_clean == "",
+    
+    flag_invalid_postcode_format = 
+      !flag_missing_postcode &
+      !str_detect(sales_postcode_clean, "^[0-9]{4}[A-Z]{2}$"),
+    
+    flag_invalid_house_number = is.na(sales_house_number) | sales_house_number <= 0,
+    
+    flag_invalid_price = is.na(sales_price_euros),
+    
+    # low real-estate prices AFTER conversion
+    flag_suspicious_low = 
+      !is.na(sales_price_euros) & sales_price_euros < 75000,
+    
+    # high-end typo protection
+    flag_suspicious_high =
+      !is.na(sales_price_euros) & sales_price_euros > 5e6,
+    
+    flag_invalid_date = is.na(sale_date) | year(sale_date) != 2024,
+    
+    # MASTER FLAG
+    flag_any_error =
+      flag_missing_postcode |
       flag_invalid_postcode_format |
       flag_invalid_house_number |
       flag_invalid_price |
-      flag_invalid_date
+      flag_invalid_date |
+      flag_suspicious_low |
+      flag_suspicious_high
   )
 
 
-# Final valid dataset (2024, in euros)
+# --- FINAL VALID DATASET ---
 sales_valid <- sales_validation_flags |>
   filter(!flag_any_error) |>
   select(
-    sales_full_address, sales_street_name, sales_house_number,
+    sales_full_address,
+    sales_street_name,
+    sales_house_number,
     sales_house_addition,
     sales_postcode = sales_postcode_clean,
     sales_town_name,
     sales_price_euros,
     sale_date
   )
+
+
 
 write_rds(sales_valid, "03_valid/data/sales_valid.rds")
 
