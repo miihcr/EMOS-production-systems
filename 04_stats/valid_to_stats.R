@@ -172,12 +172,29 @@ stats_out <- sales_denbosch_2024 |>
     n_sales      = n(),
     avg_price    = mean(sales_price_euros, na.rm = TRUE),
     median_price = median(sales_price_euros, na.rm = TRUE),
+    min_price    = min(sales_price_euros, na.rm = TRUE),
+    max_price    = max(sales_price_euros, na.rm = TRUE),
     .groups = "drop"
   ) |>
   arrange(towns_name)
 
 stats_out
 
+
+stats_out_rounded <- sales_denbosch_2024 |>
+  group_by(towns_name) |>
+  summarise(
+    n_sales      = n(),
+    avg_price    = round(mean(sales_price_euros, na.rm = TRUE), 0),
+    median_price = round(median(sales_price_euros, na.rm = TRUE), 0),
+    min_price    = min(sales_price_euros, na.rm = TRUE),
+    max_price    = max(sales_price_euros, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  arrange(towns_name)
+
+
+stats_out_rounded
 
 # Disclosure control (still needs to be modified)
 

@@ -59,7 +59,8 @@ The raw data is not included in the repository. The data files are excluded via 
 ### 4. Download the raw data (ZIP file)
 Download the datasets here:
 
-[Download files](https://filesender.surf.nl/?s=download&token=8c1876ba-9bdc-409d-a593-d0d7b38afb2c)
+[Download buildings register](https://filesender.surf.nl/?s=download&token=4fbb5eff-25f0-4fc6-b3ae-1012d0146a7c)
+[Download sales file](https://filesender.surf.nl/?s=download&token=99cf73d2-7e04-421d-96fb-bb0ff5f217ca)
 
 ### 5. Place the ZIP file hee (Do NOT unzip manually)
 After downloading, place the ZIP file and sales.csv file into:
