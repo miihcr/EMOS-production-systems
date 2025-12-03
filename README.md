@@ -119,8 +119,9 @@ source("03_valid/input_to_valid.R")
 ```r
 source("04_stats/valid_to_stats.R")
 ```
+For understanding the nature of each entry that had to be dropped due lack of matching or failure to comply with the rules, please run `mismatch_diagnostics.R` The results .csv documents will be stored under `04_stats/data`.
 
-### 4. Final output
+### 5. Final output
 The final output will be saved automatically into:
 ```bash
 05_output/avg_prices_den_bosch_2024.csv
