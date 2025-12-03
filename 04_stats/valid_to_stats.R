@@ -158,6 +158,11 @@ sales_denbosch_2024 <- sales_full |>
     # sale_date <= as.Date("2024-12-31")
   )
 
+write_rds(
+  sales_denbosch_2024,
+  "03_valid/data/sales_denbosch_2024.rds"
+)
+
 
 # COMPUTE STATISTICS
 
@@ -203,10 +208,12 @@ if (length(absorbed_towns) > 0) {
 }
 
 # We now aggregate the towns' totals
-small_totals <- stats_out |>
-  filter(n_sales < threshold)|>
-  summarise(extra_n = sum(n_sales, na.rm = TRUE),
-            extra_value = sum(n_sales * avg_price, na.rm = TRUE))
+small_totals <- sales_denbosch_2024 |>
+  filter(towns_name %in% absorbed_towns) |>
+  summarise(
+    extra_n = n(),
+    extra_value = sum(sales_price_euros, na.rm = TRUE)
+  )
 
 # We create the new table
 stats_out_protected <- stats_out |>
@@ -226,9 +233,20 @@ stats_out_protected <- stats_out |>
 
 stats_out_protected
 
-# only save when we know it is correct
+# Unprotected 
+write_csv(stats_out, 
+          "04_stats/data/denbosch_woonplaats_stats_2024_raw.csv")
 
-# write_csv(stats_out, "04_stats/data/denbosch_woonplaats_stats_2024.csv")
-# write_rds(stats_out, "04_stats/data/denbosch_woonplaats_stats_2024.rds")
+# Protected with SDC
+write_csv(stats_out_protected, 
+          "04_stats/data/denbosch_woonplaats_stats_2024_protected.csv")
 
-# message("04_stats stage completed ✓ — corrected statistics created.")
+write_rds(stats_out_protected, 
+          "04_stats/data/denbosch_woonplaats_stats_2024_protected.rds")
+
+
+write_csv(stats_out_protected, 
+          "05_output/denbosch_woonplaats_stats_2024_protected.csv")
+
+
+message("04_stats stage completed ✓ — corrected statistics created.")
