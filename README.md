@@ -5,54 +5,35 @@
 
 ## Folder structure
 
-Note: 
-
 ```
-01_raw/      - raw inputs
-02_input/    - processed inputs
-03_valid/    - validation files
-04_stats/    - statistical analysis
-05_output/   - final outputs
-scripts/     - R scripts that will later be organized in the above folders
-images/      - figures & plots
-data/        - both raw and processed data
+EMOS-production-systems/
+├── 01_raw/
+│   ├── data/
+│   └── get_data.R/
+├── 02_input/
+│   ├── data/
+│   └── raw_to_input.R/
+├── 03_valid/
+│   ├── data/
+│   └── input_to_valid.R/
+├── 04_stats/
+│   ├── data/
+│   └── valid_to_stats.R/
+├── 05_output/
+│   └── avg_prices_den_bosch_2024.csv/
+├── scripts/
+│   ├── 00_create_directories.R
+│   ├── 00_packages.R
+└── .gitignore
+└── .Rprofile
+└── EMOS-production-systens.Rproj
+└── README.md
+└── 
 
 ```
 ---
 
-## Data (important!)
-
-The data files used in this project are not included in the repository (they are too large and excluded through ``.gitignore``
-
-### Download the data manually
-
-Download the buildings register dataset:
-
-[Buildings register](https://research.cbs.nl/emos/buildings_register.zip) 
-
-Unzip the contents and place all raw CSV files into:
-
-```bash
-data/raw/
-```
-The folder should look like this:
-
-```
-data/
-└── raw/
-    ├── nummeraanduidingen.csv
-    ├── openbareruimte.csv
-    ├── verblijfsobjecten.csv
-    ├── woonplaatsen.csv
-    ├── gemeente_woonplaats.csv
-    ├── panden.csv
-    └── sales3.csv
-
-```
-  
-These files are required for the pipeline to run correctly.
-
-## Setup
+## Setup (first-time use):
 
 ### 1. Clone this repository
 
@@ -60,45 +41,46 @@ These files are required for the pipeline to run correctly.
 git clone https://github.com/miihcr/EMOS-production-systems.git
 cd EMOS-production-systems
 ```
-
-### 2. Open the RStudio project
+### 2. Open the RStudio Project
 
 ```
 EMOS-production-systems.Rproj
 ```
+### 3. Create the required folder structure
+From inside RStudio, run:
 
-### 3. Ensure the correct folder structure
-
-Make sure that the project contains the following folder structure:
-
-```
-EMOS-production-systems/
-├── 01_raw/
-├── 02_input/
-├── 02_processed/
-├── 03_valid/
-├── 04_stats/
-├── 05_output/
-├── data/
-│   ├── raw/
-│   └── processed/
-├── images/
-├── scripts/
-│   ├── 00_packages.R
-│   ├── 01_raw_to_input.R
-│   ├── 02_input_to_linked.R
-│   ├── 03_linked_to_output.R
-│   └── output.R
-└── README.md
-
-```
-
-If the folders do not yet exist, you can create them automatically by running the following script from inside the RStudio project:
+```bash
 source("scripts/00_create_directories.R")
+```
+## Data Setup (important!)
 
-### 4. Load all required R packages
+The raw data is not included in the repository. The data files are excluded via ``.gitignore`` due to their size.
 
-Packages are managed via a simple setup script (`scripts/00_packages.R`).
+### 4. Download the raw data (ZIP file)
+Download the datasets here:
+
+[Download files](https://filesender.surf.nl/?s=download&token=8c1876ba-9bdc-409d-a593-d0d7b38afb2c)
+
+### 5. Place the ZIP file hee (Do NOT unzip manually)
+After downloading, place the ZIP file and sales.csv file into:
+
+```bash
+01_raw/data
+```
+The folder should look like this:
+
+```
+data/
+├── buildings_register.zip
+└── sales.csv
+
+```
+Do not unzip it yourself as the following script will handle this automatically.
+
+## Running the pipeline
+Run the following scripts in the console sequentially. 
+
+Note: Packages are managed via a simple setup script (`scripts/00_packages.R`).
 They load automatically when the project opens.
 
 To run manually (although not required if the project opens correctly):
@@ -106,51 +88,67 @@ To run manually (although not required if the project opens correctly):
 ```r
 source("scripts/00_packages.R")
 ```
-This script install missing packages and loads all required packages.
+This script installs missing packages and loads all required packages.
 
----
-
-## Usage
-
-### Load project packages
+### 1. Unzip & Load raw data
 
 ```r
-source("scripts/00_packages.R")
+source("01_raw/get_data.R")
+```
+This will:
+- Unzip buildings_register.zip
+- Fix nested folders
+- Load all raw CSV files
+- Save RDS files for the next pipeline step
+
+Note: it is important to use the RDS files so that the correct data types are used.
+
+### 2. Process to input data
+
+```r
+source("02_input/raw_to_input.R")
+```
+### 3. Validate the data
+
+```r
+source("03_valid/input_to_valid.R")
+```
+### 4. Run statistical processing
+
+```r
+source("04_stats/valid_to_stats.R")
 ```
 
-### Data
-
-All data is stored in `data/raw`and `data/processed`. Eventually they will be moved to its correct steady state. 
-
-### Run the analysis pipelines
-
-Run scripts in order:
-
-```r
-source("scripts/01_raw_to_input.R")
-source("scripts/02_input_to_linked.R")
-source("scripts/03_linked_to_output.R")
-source("scripts/04_output.R")
+### 4. Final output
+The final output will be saved automatically into:
+```bash
+05_output/avg_prices_den_bosch_2024.csv
 ```
 ---
 
 ## Workflow
 
-### 1. Pull the latest changes before working
+### Pull the latest changes before working
 
 ```bash
 git pull
 ```
 
-### 2. Edit scripts or data as needed
+### Edit scripts as needed
 
-Add or remove packages in:
+Each pipeline step is isolated:
 
-```
-scripts/00_packages.R
-```
+`01_raw/` → raw ingestion
 
-### 3. Commit and push your work
+`02_input/` → preprocessing
+
+`03_valid/` → validation
+
+`04_stats/` → statistics
+
+`05_output/` → final output
+
+### Commit and push your work
 
 ```bash
 git add .
