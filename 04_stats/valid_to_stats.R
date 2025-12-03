@@ -18,85 +18,109 @@ ref_date <- as.Date("2024-01-01")
 
 # Addresses: unique per physical location
 
+# assuming one valid BAG record per address on 2024-01-01
+
 addresses_latest <- addresses |>
-  filter(
-    is.na(addresses_end_valid) | addresses_end_valid >= ref_date
-  ) |>
+  filter(is.na(addresses_end_valid) | addresses_end_valid >= ref_date) |>
   arrange(
     addresses_postcode,
     addresses_house_number,
     addresses_house_addition,
     desc(addresses_start_valid)
   ) |>
+  mutate(
+    join_house_addition = coalesce(addresses_house_addition, "") |>
+      str_trim() |> str_to_upper()
+  ) |>
   distinct(
     addresses_postcode,
     addresses_house_number,
-    addresses_house_addition,
+    join_house_addition,
     .keep_all = TRUE
   )
 
-# PUBLIC SPACES
+
 public_spaces_latest <- public_spaces |>
-  filter(
-    is.na(public_spaces_end_valid) | public_spaces_end_valid >= ref_date
-  ) |>
+  filter(is.na(public_spaces_end_valid) | public_spaces_end_valid >= ref_date) |>
   arrange(public_spaces_id_public_space, desc(public_spaces_start_valid)) |>
   distinct(public_spaces_id_public_space, .keep_all = TRUE)
 
-# TOWNS
 towns_latest <- towns |>
-  filter(
-    is.na(towns_end_valid) | towns_end_valid >= ref_date
-  ) |>
+  filter(is.na(towns_end_valid) | towns_end_valid >= ref_date) |>
   arrange(towns_id_town, desc(towns_start_valid)) |>
   distinct(towns_id_town, .keep_all = TRUE)
 
-# MUNICIPALITIES
 municipalities_latest <- municipalities |>
-  filter(
-    is.na(municipalities_end_valid) |
-      municipalities_end_valid >= ref_date
+  filter(is.na(municipalities_end_valid) | municipalities_end_valid >= ref_date) |>
+  arrange(municipalities_id_town, desc(municipalities_start_valid)) |>
+  distinct(municipalities_id_town, .keep_all = TRUE)
+
+buildings_latest <- buildings |>
+  arrange(buildings_id_building, desc(buildings_start_valid)) |>
+  distinct(buildings_id_building, .keep_all = TRUE)
+
+
+
+# NORMALIZE SALES HOUSE ADDITION
+
+sales <- sales |>
+  mutate(
+    join_house_addition = coalesce(sales_house_addition, "") |>
+      str_trim() |> str_to_upper()
   )
 
-
-# Link SALES TO BAG ADDRESSES
+# JOIN SALES AND ADDRESSES
 
 sales_addr <- sales |>
   left_join(
     addresses_latest,
     by = join_by(
-      sales_postcode       == addresses_postcode,
-      sales_house_number   == addresses_house_number,
-      sales_house_addition == addresses_house_addition
+      sales_postcode      == addresses_postcode,
+      sales_house_number  == addresses_house_number,
+      join_house_addition == join_house_addition
     )
   )
 
-# Ensure BAG address was valid at sale date
+stopifnot(nrow(sales) == nrow(sales_addr))
+
+
+# CHECK ABOUT VALIDITY AT THE TIME OF SALE BUT DON'T DROP
 
 sales_addr_latest <- sales_addr |>
-  filter(
-    addresses_start_valid <= sale_date,
-    is.na(addresses_end_valid) | addresses_end_valid >= sale_date
+  mutate(
+    address_valid_at_sale =
+      !is.na(addresses_start_valid) &
+      addresses_start_valid <= sale_date &
+      (is.na(addresses_end_valid) | addresses_end_valid >= sale_date)
+  )
+
+stopifnot(nrow(sales) == nrow(sales_addr_latest))
+
+
+
+# COLLAPSE DWELLINGS -> ONE ROW PER ADDRESS
+
+dwellings_res <- dwellings |>
+  group_by(dwellings_id_address) |>
+  summarise(
+    dwellings_n_units    = n(),
+    dwellings_total_area = sum(dwellings_area_m2, na.rm = TRUE),
+    dwellings_mean_area  = mean(dwellings_area_m2, na.rm = TRUE),
+    .groups = "drop"
   )
 
 
-# 3. DEDUPLICATE DWELLINGS
-
-dwellings_res <- dwellings  |>
-  distinct(dwellings_id_dwelling, .keep_all = TRUE)
-
-
-# SALES → ADDRESSES → DWELLINGS
+# JOIN SALES TO ADDRESSES TO DWELLINGS
 
 sales_addr_dwell <- sales_addr_latest |>
   left_join(
     dwellings_res,
     by = join_by(id_address == dwellings_id_address)
-  ) |>
-  filter(!is.na(dwellings_id_dwelling))
+  )
 
+stopifnot(nrow(sales) == nrow(sales_addr_dwell))
 
-# LINK TO TOWNS AND MUNICIPALITIES
+# JOIN TO PUBLIC SPACE + TOWN + MUNICIPALITY
 
 sales_full <- sales_addr_dwell |>
   left_join(
@@ -112,25 +136,26 @@ sales_full <- sales_addr_dwell |>
     by = join_by(public_spaces_id_town == municipalities_id_town)
   )
 
-# 5. Identify municipality 's-Hertogenbosch
+stopifnot(nrow(sales) == nrow(sales_full))
 
+
+# IDENTIFY ’S-HERTOGENBOSCH / DEN BOSCH
 
 den_bosch_town_ids <- towns_latest |>
-  filter(str_detect(towns_name, "Hertogenbosch")) |>
+  filter(str_detect(towns_name, "(?i)hertogenbosch|den bosch")) |>
   pull(towns_id_town)
 
 den_bosch_mun_ids <- municipalities_latest |>
   filter(municipalities_id_town %in% den_bosch_town_ids) |>
   pull(municipalities_id_municipality)
 
-
-# 7. Select SALES in that municipality (2024)
+# FILTER SALES IN DEN BOSCH (2024) 
 
 sales_denbosch_2024 <- sales_full |>
   filter(
-    municipalities_id_municipality %in% den_bosch_mun_ids,
-    sale_date >= as.Date("2024-01-01"),
-    sale_date <= as.Date("2024-12-31")
+    municipalities_id_municipality %in% den_bosch_mun_ids
+    # sale_date >= as.Date("2024-01-01"),
+    # sale_date <= as.Date("2024-12-31")
   )
 
 
@@ -146,11 +171,10 @@ stats_out <- sales_denbosch_2024 |>
   ) |>
   arrange(towns_name)
 
-
 stats_out
 
 
-# Disclosure control
+# Disclosure control (still needs to be modified)
 
 
 stats_out <- stats_out |>

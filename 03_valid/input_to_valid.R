@@ -18,18 +18,48 @@ sales          <- read_rds("02_input/data/sales_input.rds")
 # 2. VALIDATE ADDRESSES
 
 addresses_valid <- addresses |>
+  
+  # Standardized postcode check
   mutate(
-    addresses_postcode = ifelse(
-      str_detect(addresses_postcode, "^[0-9]{4}[A-Z]{2}$"),
+    addresses_postcode = if_else(
+      grepl("^[0-9]{4}[A-Z]{2}$", addresses_postcode),
       addresses_postcode,
       NA_character_
     ),
-    addresses_house_number = ifelse(
-      !is.na(addresses_house_number) & addresses_house_number > 0,
+    
+    # House number must be a positive integer
+    addresses_house_number = if_else(
+      !is.na(addresses_house_number) & addresses_house_number >= 1 & addresses_house_number <= 9999,
       addresses_house_number,
       NA_integer_
+    ),
+    
+    # House addition format (character or NA)
+    addresses_house_addition = if_else(
+      is.na(addresses_house_addition) |
+        grepl("^[A-Z0-9]{1,4}$", addresses_house_addition),
+      addresses_house_addition,
+      NA_character_
     )
-  )
+  ) |>
+  
+  # Required fields for linking
+  filter(
+    !is.na(id_address),
+    !is.na(addresses_postcode),
+    !is.na(addresses_house_number),
+    !is.na(addresses_id_public_space)
+  ) |>
+  
+  # Validity dates must be real Dates (handled in rule file too)
+  filter(
+    is.na(addresses_end_valid) | addresses_end_valid >= addresses_start_valid
+  ) |>
+  
+  # Ensure one row per address (defensive)
+  distinct(id_address, .keep_all = TRUE) |>
+  
+  arrange(id_address)
 
 
 write_rds(addresses_valid, "03_valid/data/addresses_valid.rds")
@@ -122,22 +152,24 @@ write_rds(municipalities_valid, "03_valid/data/municipalities_valid.rds")
 
 sales_validation_flags <- sales |>
   mutate(
-    # Convert to whole euros
+
     sales_price_euros = case_when(
-      sales_price >= 10000 ~ as.numeric(sales_price),      # already euros
-      sales_price >= 100   ~ as.numeric(sales_price) * 1000, # in k€
-      TRUE                 ~ NA_real_                       # suspiciously low
+      sales_price >= 10000 & sales_price < 5e6  ~ sales_price,         # already euros
+      sales_price >= 100   & sales_price < 5000 ~ sales_price * 1000,  # in k€
+      TRUE ~ NA_real_
     ),
+    
+    # keep k€ version for inspection
     sales_price_k = sales_price_euros / 1000,
     
-    # Postcodes already normalized, but ensure no whitespace
+    # ✅ Clean postcode
     sales_postcode_clean = sales_postcode |>
       str_squish() |>
       str_to_upper() |>
       str_remove_all("\\s+"),
     
-    # Validation flags
-    flag_missing_postcode        = is.na(sales_postcode_clean),
+    # ✅ Validation flags
+    flag_missing_postcode         = is.na(sales_postcode_clean),
     flag_invalid_postcode_format = !is.na(sales_postcode_clean) &
       !str_detect(sales_postcode_clean, "^[0-9]{4}[A-Z]{2}$"),
     flag_invalid_house_number    = is.na(sales_house_number) | sales_house_number <= 0,
