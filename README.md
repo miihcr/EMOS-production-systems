@@ -3,6 +3,8 @@
 
 ---
 
+Analysis pipeline for housing price statistics in Den Bosch using Dutch buildings register data.
+
 ## Folder structure
 
 ```
